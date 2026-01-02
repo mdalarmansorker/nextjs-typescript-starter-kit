@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+# Next.js Starter Kit
+
+>A modern, full-featured starter kit for building robust web applications with Next.js, TypeScript, Redux Toolkit, Tailwind CSS, and more.
+
+
+## Features
+
+- **Next.js 16** with App Router and TypeScript
+- **Redux Toolkit** for state management
+- **Tailwind CSS** for utility-first styling
+- **Prettier, ESLint, Stylelint** for code quality and formatting
+- **CryptoJS** for encryption utilities
+- **Lucide React** for icons
+- **Environment variable support** (with `.env.example`)
+- Modular folder structure for scalability
+
+## Project Structure
+
+```
+├── app/                # Next.js app directory (pages, layout, etc.)
+├── constants/          # API endpoints and constants
+├── lib/                # Store, hooks, utilities, and features
+├── public/             # Static assets
+├── services/           # App-level services (cache, cookies)
+├── types/              # TypeScript type definitions
+├── utils/              # Utility functions (e.g., encryption)
+├── styles/             # Global and component styles
+├── .env.example        # Example environment variables
+├── package.json        # Project dependencies and scripts
+├── tsconfig.json       # TypeScript configuration
+└── ...
+```
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies:**
+	```bash
+	npm install
+	# or
+	yarn install
+	```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Copy and configure environment variables:**
+	```bash
+	cp .env.example .env.local
+	# Edit .env.local as needed
+	```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Run the development server:**
+	```bash
+	npm run dev
+	# or
+	yarn dev
+	```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Open your browser:**
+	Visit [http://localhost:3000](http://localhost:3000)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+- `dev`         – Start the development server
+- `build`       – Build for production
+- `start`       – Start the production server
+- `lint`        – Run ESLint
+- `lint:fix`    – Fix ESLint issues
+- `format`      – Format code with Prettier
+- `stylelint`   – Run Stylelint
+- `stylelint:fix` – Fix Stylelint issues
 
-To learn more about Next.js, take a look at the following resources:
+## Key Technologies
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js**: React framework for server-side rendering and static site generation
+- **TypeScript**: Strongly typed JavaScript
+- **Redux Toolkit**: Simplified Redux state management
+- **Tailwind CSS**: Utility-first CSS framework
+- **CryptoJS**: Encryption and decryption utilities
+- **Lucide React**: Icon library
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## State Management Example
 
-## Deploy on Vercel
+Redux Toolkit is set up in `lib/store.ts` and `lib/features/`. Use `useAppDispatch` and `useAppSelector` from `lib/hooks.ts` for typed hooks.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Utilities
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `lib/utils.ts`: Utility helpers (e.g., `cn` for class merging)
+- `utils/encryption.ts`: Secure encryption/decryption helpers
+
+## Environment Variables
+
+See `.env.example` for all available environment variables. Only variables prefixed with `NEXT_PUBLIC_` are exposed to the client.
+
+## Linting & Formatting
+
+- ESLint, Prettier, and Stylelint are preconfigured. Use the provided scripts to check and fix code style.
+
+## Deployment
+
+Deploy easily to [Vercel](https://vercel.com/) or your preferred platform. See Next.js docs for more info.
+
+---
+
+**Happy coding!**
