@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-starter-kit",
+  "name": "nextjs-typescript-starter-kit",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,16 +10,18 @@
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
     "stylelint": "stylelint \"**/*.{css,scss,js,jsx,ts,tsx}\"",
-    "stylelint:fix": "stylelint \"**/*.{css,scss,js,jsx,ts,tsx}\" --fix"
+    "stylelint:fix": "stylelint \"**/*.{css,scss,js,jsx,ts,tsx}\" --fix",
+    "make:module": "ts-node --project scripts/tsconfig.json scripts/make-module.ts",
+    "make:type": "ts-node --project scripts/tsconfig.json scripts/make-type.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.1.0",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "lucide-react": "^0.544.0",
-    "next": "16.1.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "next": "16.2.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "react-redux": "^9.2.0",
     "tailwind-merge": "^3.4.0",
     "js-cookie": "^3.0.5"
@@ -28,11 +30,11 @@
     "@tailwindcss/postcss": "^4",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.19.27",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
     "@types/js-cookie": "^3.0.6",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "16.2.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -41,5 +43,9 @@
     "stylelint-use-logical-spec": "^5.0.1",
     "tailwindcss": "^4",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
   }
 }
