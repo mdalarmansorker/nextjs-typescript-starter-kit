@@ -1,114 +1,144 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
-import tsParser from '@typescript-eslint/parser'
-import tsPlugin from '@typescript-eslint/eslint-plugin'
-import reactPlugin from 'eslint-plugin-react'
-import jsxA11yPlugin from 'eslint-plugin-jsx-a11y'
-
-// Get __dirname in ESM
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-// FlatCompat for legacy ESLint config support
-const compat = new FlatCompat({ baseDirectory: __dirname })
+import js from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort';
+import prettierConfig from 'eslint-config-prettier';
 
 export default [
-  // ⛔ Ignore config & build files
+  // Ignores
   {
-    ignores: [
-      'eslint.config.mjs',
-      'next-env.d.ts',
-      '.next/**',
-      'node_modules/**',
-    ],
+    ignores: ['.next/**', 'node_modules/**', 'out/**', 'coverage/**', 'next-env.d.ts', 'eslint.config.mjs'],
   },
 
-  // 🔹 TypeScript files with type checking
+  // Base rules
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+
+  // React & Next.js
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{js,jsx,mjs,ts,tsx}'],
+
+    plugins: {
+      'react-hooks': reactHooks,
+      '@next/next': nextPlugin,
+    },
+
     languageOptions: {
-      parser: tsParser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
       parserOptions: {
-        project: './tsconfig.json',
-        tsconfigRootDir: __dirname,
-        ecmaVersion: 'latest',
-        sourceType: 'module',
         ecmaFeatures: {
           jsx: true,
         },
       },
     },
-    plugins: {
-      '@typescript-eslint': tsPlugin,
-      react: reactPlugin,
-      'jsx-a11y': jsxA11yPlugin,
-    },
-  },
 
-  // 🔹 JavaScript/JSX files without type checking
-  {
-    files: ['**/*.{js,jsx,mjs}'],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true,
-        },
-        // No project reference for JS files
-      },
-    },
-    plugins: {
-      react: reactPlugin,
-      'jsx-a11y': jsxA11yPlugin,
-    },
-  },
-
-  // 🔹 Legacy config compatibility (FlatCompat)
-  ...compat.config({
-    extends: [
-      'prettier',
-    ],
     rules: {
-      // React & JSX Accessibility
-      'jsx-a11y/alt-text': 'off',
-      'react/display-name': 'off',
-      'react/no-children-prop': 'off',
+      // React
+      ...reactHooks.configs.recommended.rules,
+      'react-hooks/exhaustive-deps': 'off',
+
+      // Next.js
+      ...nextPlugin.configs.recommended.rules,
       '@next/next/no-img-element': 'off',
       '@next/next/no-page-custom-font': 'off',
+    },
+  },
 
-      // Disable all import rules
-      'import/order': 'off',
-      'import/newline-after-import': 'off',
-      'import/no-unresolved': 'off',
-
-      // Comment & padding rules
-      'lines-around-comment': [
+  // TypeScript
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
+      'no-empty': [
         'error',
         {
-          beforeBlockComment: true,
-          beforeLineComment: true,
-          allowBlockStart: true,
-          allowObjectStart: true,
-          allowArrayStart: true,
+          allowEmptyCatch: true,
+        },
+      ],
+      '@typescript-eslint/no-empty-object-type': [
+        'error',
+        {
+          allowInterfaces: 'with-single-extends',
+        },
+      ],
+    },
+  },
+
+  // JavaScript
+  {
+    files: ['**/*.{js,jsx,mjs}'],
+    rules: {
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
+    },
+  },
+
+  // Import sorting
+  {
+    files: ['**/*.{ts,tsx,js,jsx,mjs}'],
+
+    plugins: {
+      'simple-import-sort': simpleImportSortPlugin,
+    },
+
+    rules: {
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [
+            // Side effects
+            ['^\\u0000'],
+
+            // React & Next.js
+            ['^react$', '^react-', '^next(?:/.*)?$'],
+
+            // Third-party
+            ['^@?\\w'],
+
+            // Internal
+            ['^@/utils(?:/.*)?$'],
+            ['^@/lib(?:/.*)?$'],
+            ['^@/services(?:/.*)?$'],
+            ['^@/hooks(?:/.*)?$'],
+            ['^@/components/icons(?:/.*)?$'],
+            ['^@/components(?:/.*)?$'],
+            ['^@/types(?:/.*)?$'],
+            ['^@/constants(?:/.*)?$', '^@/data(?:/.*)?$', '^@/views(?:/.*)?$', '^@/(.*)$'],
+
+            // Parent imports
+            ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+
+            // Relative imports
+            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+
+            // Styles
+            ['^.+\\.(?:css|scss)$'],
+          ],
         },
       ],
 
-      'padding-line-between-statements': [
-        'error',
-        { blankLine: 'any', prev: 'export', next: 'export' },
-        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
-        { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
-        { blankLine: 'always', prev: '*', next: ['function', 'multiline-const', 'multiline-block-like'] },
-        { blankLine: 'always', prev: ['function', 'multiline-const', 'multiline-block-like'], next: '*' },
-      ],
+      'simple-import-sort/exports': 'error',
+    },
+  },
 
-      'newline-before-return': 'error',
-    },
-    settings: {
-      react: { version: 'detect' },
-    },
-  }),
-]
+  // Prettier
+  prettierConfig,
+];

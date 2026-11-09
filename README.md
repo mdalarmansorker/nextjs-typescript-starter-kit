@@ -66,6 +66,7 @@
 - `start` – Start the production server
 - `lint` – Run ESLint
 - `lint:fix` – Fix ESLint issues
+- `typecheck` – Run the TypeScript compiler without emitting files
 - `format` – Format code with Prettier
 - `stylelint` – Run Stylelint
 - `stylelint:fix` – Fix Stylelint issues

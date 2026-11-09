@@ -1,23 +1,23 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface PageTitleState {
-  pageTitle: string
+  pageTitle: string;
 }
 
 const initialState: PageTitleState = {
-  pageTitle: ''
-}
+  pageTitle: '',
+};
 
 export const pageTitleSlice = createSlice({
   name: 'pageTitle',
   initialState,
   reducers: {
     setPageTitle: (state, action: PayloadAction<string>) => {
-      state.pageTitle = action.payload
-    }
-  }
-})
+      state.pageTitle = action.payload;
+    },
+  },
+});
 
-export const { setPageTitle } = pageTitleSlice.actions
+export const { setPageTitle } = pageTitleSlice.actions;
 
-export default pageTitleSlice.reducer
+export default pageTitleSlice.reducer;

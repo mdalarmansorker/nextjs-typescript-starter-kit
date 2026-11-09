@@ -1,4 +1,4 @@
-import Cookies from 'js-cookie'
+import Cookies from 'js-cookie';
 
 /**
  * CookieService provides static methods to manage browser cookies.
@@ -11,17 +11,17 @@ export default class CookieService {
    * Checks if code is running on the server
    */
   private static isServer(): boolean {
-    return typeof window === 'undefined'
+    return typeof window === 'undefined';
   }
 
   /**
    * Gets the Next.js cookies store (server-side only)
    */
   private static async getServerCookies() {
-    if (!this.isServer()) return null
-    const { cookies } = await import('next/headers')
+    if (!this.isServer()) return null;
+    const { cookies } = await import('next/headers');
 
-    return cookies()
+    return cookies();
   }
 
   /**
@@ -32,24 +32,30 @@ export default class CookieService {
    */
   static async store(name: string, value: string, options?: Cookies.CookieAttributes): Promise<void> {
     if (this.isServer()) {
-      const cookieStore = await this.getServerCookies()
+      const cookieStore = await this.getServerCookies();
 
       if (cookieStore) {
-        const serverOptions: any = {}
+        const serverOptions: {
+          maxAge?: number;
+          path?: string;
+          domain?: string;
+          secure?: boolean;
+          sameSite?: 'strict' | 'lax' | 'none';
+        } = {};
 
         if (options?.expires) {
-          serverOptions.maxAge = typeof options.expires === 'number' ? options.expires * 86400 : undefined
+          serverOptions.maxAge = typeof options.expires === 'number' ? options.expires * 86400 : undefined;
         }
 
-        if (options?.path) serverOptions.path = options.path
-        if (options?.domain) serverOptions.domain = options.domain
-        if (options?.secure) serverOptions.secure = options.secure
-        if (options?.sameSite) serverOptions.sameSite = options.sameSite
+        if (options?.path) serverOptions.path = options.path;
+        if (options?.domain) serverOptions.domain = options.domain;
+        if (options?.secure) serverOptions.secure = options.secure;
+        if (options?.sameSite) serverOptions.sameSite = options.sameSite.toLowerCase() as 'strict' | 'lax' | 'none';
 
-        cookieStore.set(name, value, serverOptions)
+        cookieStore.set(name, value, serverOptions);
       }
     } else {
-      Cookies.set(name, value, options)
+      Cookies.set(name, value, options);
     }
   }
 
@@ -60,11 +66,11 @@ export default class CookieService {
    */
   static async get(name: string): Promise<string | undefined> {
     if (this.isServer()) {
-      const cookieStore = await this.getServerCookies()
+      const cookieStore = await this.getServerCookies();
 
-      return cookieStore?.get(name)?.value
+      return cookieStore?.get(name)?.value;
     } else {
-      return Cookies.get(name)
+      return Cookies.get(name);
     }
   }
 
@@ -75,7 +81,7 @@ export default class CookieService {
    * @param options Optional cookie options (expires, path, etc.).
    */
   static async update(name: string, value: string, options?: Cookies.CookieAttributes): Promise<void> {
-    await this.store(name, value, options)
+    await this.store(name, value, options);
   }
 
   /**
@@ -85,18 +91,13 @@ export default class CookieService {
    */
   static async delete(name: string, options?: Cookies.CookieAttributes): Promise<void> {
     if (this.isServer()) {
-      const cookieStore = await this.getServerCookies()
+      const cookieStore = await this.getServerCookies();
 
       if (cookieStore) {
-        const serverOptions: any = {}
-
-        if (options?.path) serverOptions.path = options.path
-        if (options?.domain) serverOptions.domain = options.domain
-
-        cookieStore.delete(name)
+        cookieStore.delete({ name, path: options?.path, domain: options?.domain });
       }
     } else {
-      Cookies.remove(name, options)
+      Cookies.remove(name, options);
     }
   }
 
@@ -106,21 +107,21 @@ export default class CookieService {
    */
   static async clear(): Promise<void> {
     if (this.isServer()) {
-      const cookieStore = await this.getServerCookies()
+      const cookieStore = await this.getServerCookies();
 
       if (cookieStore) {
-        const allCookies = cookieStore.getAll()
+        const allCookies = cookieStore.getAll();
 
         allCookies.forEach(cookie => {
-          cookieStore.delete(cookie.name)
-        })
+          cookieStore.delete(cookie.name);
+        });
       }
     } else {
-      const allCookies = Cookies.get()
+      const allCookies = Cookies.get();
 
       Object.keys(allCookies).forEach(cookieName => {
-        Cookies.remove(cookieName)
-      })
+        Cookies.remove(cookieName);
+      });
     }
   }
 
@@ -130,37 +131,37 @@ export default class CookieService {
    */
   static storeSync(name: string, value: string, options?: Cookies.CookieAttributes): void {
     if (this.isServer()) {
-      throw new Error('storeSync cannot be used on server-side. Use store() instead.')
+      throw new Error('storeSync cannot be used on server-side. Use store() instead.');
     }
 
-    Cookies.set(name, value, options)
+    Cookies.set(name, value, options);
   }
 
   static getSync(name: string): string | undefined {
     if (this.isServer()) {
-      throw new Error('getSync cannot be used on server-side. Use get() instead.')
+      throw new Error('getSync cannot be used on server-side. Use get() instead.');
     }
 
-    return Cookies.get(name)
+    return Cookies.get(name);
   }
 
   static deleteSync(name: string, options?: Cookies.CookieAttributes): void {
     if (this.isServer()) {
-      throw new Error('deleteSync cannot be used on server-side. Use delete() instead.')
+      throw new Error('deleteSync cannot be used on server-side. Use delete() instead.');
     }
 
-    Cookies.remove(name, options)
+    Cookies.remove(name, options);
   }
 
   static clearSync(): void {
     if (this.isServer()) {
-      throw new Error('clearSync cannot be used on server-side. Use clear() instead.')
+      throw new Error('clearSync cannot be used on server-side. Use clear() instead.');
     }
 
-    const allCookies = Cookies.get()
+    const allCookies = Cookies.get();
 
     Object.keys(allCookies).forEach(cookieName => {
-      Cookies.remove(cookieName)
-    })
+      Cookies.remove(cookieName);
+    });
   }
 }

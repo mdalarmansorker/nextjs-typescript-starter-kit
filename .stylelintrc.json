@@ -1,16 +1,13 @@
 {
-  "plugins": [
-    "stylelint-use-logical-spec"
-  ],
+  "plugins": ["stylelint-plugin-logical-css"],
+  "extends": ["stylelint-plugin-logical-css/configs/recommended"],
   "overrides": [
     {
       "customSyntax": "postcss-styled-syntax",
-      "files": [
-        "**/*.{js,ts,jsx,tsx}"
-      ]
+      "files": ["**/*.{js,ts,jsx,tsx}"]
     }
   ],
   "rules": {
-    "liberty/use-logical-spec": "always"
+    "logical-css/require-logical-properties": [true, { "ignore": ["overflow-x", "overflow-y"], "severity": "error" }]
   }
 }
