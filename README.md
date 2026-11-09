@@ -21,7 +21,7 @@
 ├── constants/          # API endpoints and constants
 ├── lib/                # Store, hooks, utilities, and features
 ├── public/             # Static assets
-├── services/           # App-level services (cache, cookies)
+├── services/           # API layer (services/api) and app-level services (cache, cookies)
 ├── types/              # TypeScript type definitions
 ├── utils/              # Utility functions (e.g., encryption)
 ├── styles/             # Global and component styles
@@ -141,7 +141,20 @@ Redux Toolkit is set up in `lib/store.ts` and `lib/features/`. Use `useAppDispat
 ## Utilities
 
 - `lib/utils.ts`: Utility helpers (e.g., `cn` for class merging)
-- `utils/encryption.ts`: Secure encryption/decryption helpers
+- `utils/encryption.server.ts`: Server-only AES-256-GCM encryption/decryption
+- `utils/redirect-encryption.ts`: Hides redirect URLs in query strings (obfuscation, not security)
+
+## API Layer
+
+All backend calls go through `handleRequest` in `services/api`, which attaches the access token, parses the response and handles expired sessions. Requests run on the server, so `API_URL` and the token cookie stay out of the browser.
+
+```ts
+import { handleRequest } from '@/services/api/base.service';
+
+const me = await handleRequest<User>('/auth/me', { requiresAuth: true, cache: 'no-store' });
+```
+
+See [docs/api-layer.md](docs/api-layer.md) for the request flow, options, error handling and setup.
 
 ## Cookie Service
 

@@ -1,5 +1,15 @@
 import Cookies from 'js-cookie';
 
+interface ServerCookieOptions {
+  expires?: Date;
+  maxAge?: number;
+  path?: string;
+  domain?: string;
+  secure?: boolean;
+  httpOnly?: boolean;
+  sameSite?: 'strict' | 'lax' | 'none';
+}
+
 /**
  * CookieService provides static methods to manage browser cookies.
  * Automatically detects server-side vs client-side and uses appropriate method.
@@ -25,6 +35,29 @@ export default class CookieService {
   }
 
   /**
+   * Maps js-cookie options to the shape Next.js cookies() expects
+   */
+  private static getServerOptions(options?: Cookies.CookieAttributes): ServerCookieOptions {
+    if (!options) return {};
+
+    const serverOptions: ServerCookieOptions = {
+      ...(options.path && { path: options.path }),
+      ...(options.domain && { domain: options.domain }),
+      ...(options.secure !== undefined && { secure: options.secure }),
+      ...(options.httpOnly !== undefined && { httpOnly: options.httpOnly }),
+      ...(options.sameSite && { sameSite: options.sameSite.toLowerCase() as ServerCookieOptions['sameSite'] }),
+    };
+
+    if (typeof options.expires === 'number') {
+      serverOptions.maxAge = options.expires * 86400;
+    } else if (options.expires instanceof Date) {
+      serverOptions.expires = options.expires;
+    }
+
+    return serverOptions;
+  }
+
+  /**
    * Stores a cookie with the given name, value, and options.
    * @param name The name of the cookie.
    * @param value The value to store.
@@ -35,24 +68,7 @@ export default class CookieService {
       const cookieStore = await this.getServerCookies();
 
       if (cookieStore) {
-        const serverOptions: {
-          maxAge?: number;
-          path?: string;
-          domain?: string;
-          secure?: boolean;
-          sameSite?: 'strict' | 'lax' | 'none';
-        } = {};
-
-        if (options?.expires) {
-          serverOptions.maxAge = typeof options.expires === 'number' ? options.expires * 86400 : undefined;
-        }
-
-        if (options?.path) serverOptions.path = options.path;
-        if (options?.domain) serverOptions.domain = options.domain;
-        if (options?.secure) serverOptions.secure = options.secure;
-        if (options?.sameSite) serverOptions.sameSite = options.sameSite.toLowerCase() as 'strict' | 'lax' | 'none';
-
-        cookieStore.set(name, value, serverOptions);
+        cookieStore.set(name, value, this.getServerOptions(options));
       }
     } else {
       Cookies.set(name, value, options);

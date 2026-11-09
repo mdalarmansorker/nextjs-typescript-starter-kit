@@ -1,4 +1,7 @@
-export const API_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+/**
+ * Base URL of the backend API. Server-only: requests go through `services/api`, never from the browser.
+ */
+export const API_URL: string = process.env.API_URL || '';
 
 /**
  * You can add other API-related constants here as needed
