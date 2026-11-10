@@ -26,3 +26,16 @@ describe('AuthService.login', () => {
     expect(() => parse!({ token: '' })).toThrow();
   });
 });
+
+describe('AuthService.logout', () => {
+  it('revokes the token without ending the session on a 401', async () => {
+    await AuthService.logout();
+
+    expect(handleRequest).toHaveBeenCalledWith('/auth/logout', {
+      method: 'POST',
+      requiresAuth: true,
+      endSessionOn401: false,
+      timeoutMs: 5_000,
+    });
+  });
+});

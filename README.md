@@ -1,12 +1,18 @@
 # Next.js Starter Kit
 
-A starter for Next.js apps that talk to a separate backend API: TypeScript, Redux Toolkit, Tailwind CSS, a server-side API layer, tests and CI, ready to build on.
+[![PR checks](https://github.com/mdalarmansorker/nextjs-typescript-starter-kit/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/mdalarmansorker/nextjs-typescript-starter-kit/actions/workflows/pr-checks.yml)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.18-brightgreen)](.nvmrc)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+A starter for Next.js apps that talk to a separate REST API, whatever it's built with: Laravel, Django, FastAPI, Express, Rails, Go or anything else that speaks JSON over HTTP. TypeScript, Redux Toolkit, Tailwind CSS, a server-side API layer, tests and CI, ready to build on.
 
 ## Features
 
 - **Next.js 16** App Router with React 19 and TypeScript in strict mode
-- **Server-only API layer** with timeouts, runtime response checks (zod), typed errors and expired-session handling
-- **Login, logout and protected routes**: login page and server action, `httpOnly` token cookie, `proxy.ts` route protection, return-to-page after login
+- **Server-only API layer** with timeouts, query parameters, runtime response checks (zod), typed errors and expired-session handling
+- **Works with any REST backend**: error bodies and field errors are read from the common formats (Laravel, Django REST Framework, FastAPI, Express, RFC 9457, JSON:API) in one adaptable function
+- **Login, logout and protected routes**: login page and server action, `httpOnly` token cookie, token revocation on logout, `proxy.ts` route protection, return-to-page after login
+- **Environment check at startup**: a missing `API_URL` or malformed key stops the server with a clear list of problems
 - **AES-256-GCM encryption** with purpose labels, expiry and key rotation
 - **Redux Toolkit** with typed hooks and a per-request store
 - **Tailwind CSS 4**
@@ -27,7 +33,11 @@ cp .env.example .env.local   # then set API_URL and the other values
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Logging in needs your backend at `API_URL`; adjust `LoginResponseSchema` in `services/api/auth.service.ts` to your API's login response.
+Open [http://localhost:3000](http://localhost:3000). Logging in needs your backend at `API_URL`. To connect your API:
+
+1. Set the endpoint paths in `constants/api/auth.api.ts` (`AUTH_LOGOUT = null` if your API has no logout endpoint).
+2. Change `LoginResponseSchema` in `services/api/auth.service.ts` to your API's login response.
+3. If your API's error bodies aren't one of the common shapes, adapt `readApiError` in `services/api/api-errors.ts`.
 
 ## Scripts
 

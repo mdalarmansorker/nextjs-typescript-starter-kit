@@ -7,7 +7,7 @@ import { encodeRedirectPath } from '@/utils/redirect-path';
 
 import { CURRENT_PATH_HEADER } from '@/constants/routes';
 
-import { ApiError } from './api-errors';
+import { ApiError, readApiError } from './api-errors';
 import { executeServerRequest, type RequestOptions } from './server-request';
 
 export interface HandleRequestOptions<T> extends RequestOptions {
@@ -16,6 +16,11 @@ export interface HandleRequestOptions<T> extends RequestOptions {
    * the body is only cast to `T`. Works with any schema library, e.g. `parse: data => UserSchema.parse(data)`.
    */
   parse?: (data: unknown) => T;
+  /**
+   * On a 401 for a `requiresAuth` request, end the session and redirect to login (default). Set to
+   * `false` to get the `ApiError` instead, e.g. for a logout call whose token may already be invalid.
+   */
+  endSessionOn401?: boolean;
 }
 
 /**
@@ -43,13 +48,17 @@ const endSession = async (): Promise<never> => {
  *
  * @template T Expected response type
  * @param slug API path, appended to `API_URL` (`/projects/1`)
- * @param options `fetch` options plus `requiresAuth`, `revalidateTags`, `cachedRead`, `timeoutMs`, `parse`
+ * @param options `fetch` options plus `requiresAuth`, `query`, `revalidateTags`, `cachedRead`, `timeoutMs`,
+ *   `parse`, `endSessionOn401`
  * @returns The parsed response body
  * @throws {ApiError} For any failure, with `status`, the API's `message` and its field `errors`.
  *   A 401 on a `requiresAuth` request ends the session and redirects to login instead.
  *
  * @example
  * const project = await handleRequest<Project>('/projects/1', { requiresAuth: true });
+ *
+ * @example
+ * const page = await handleRequest('/projects', { requiresAuth: true, query: { page: 2, status: 'active' } });
  *
  * @example
  * await handleRequest('/projects', {
@@ -60,15 +69,17 @@ const endSession = async (): Promise<never> => {
  * });
  */
 export const handleRequest = async <T = unknown>(slug: string, options: HandleRequestOptions<T> = {}): Promise<T> => {
-  const { parse, ...requestOptions } = options;
+  const { parse, endSessionOn401 = true, ...requestOptions } = options;
   const result = await executeServerRequest<unknown>(slug, requestOptions);
 
   if (!result.ok) {
-    if (result.status === 401 && options.requiresAuth) {
+    if (result.status === 401 && options.requiresAuth && endSessionOn401) {
       await endSession();
     }
 
-    throw new ApiError(result.data?.message ?? 'Something went wrong', result.status, result.data?.errors);
+    const { message, errors } = readApiError(result.data);
+
+    throw new ApiError(message ?? 'Something went wrong', result.status, errors);
   }
 
   if (!parse) {

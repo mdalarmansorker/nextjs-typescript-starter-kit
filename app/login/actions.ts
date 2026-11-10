@@ -48,7 +48,7 @@ export async function login(_previous: LoginState, formData: FormData): Promise<
       return {
         email,
         message: error.message,
-        fieldErrors: (error.errors as LoginState['fieldErrors']) ?? undefined,
+        fieldErrors: error.fieldErrors,
       };
     }
 

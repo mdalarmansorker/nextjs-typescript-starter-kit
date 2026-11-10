@@ -9,16 +9,11 @@ import { API_URL } from '@/constants/api';
 
 import apiInterceptor, { type ApiInterceptorOptions } from './api.interceptor';
 
-interface ApiErrorBody {
-  status: 'error';
-  message: string;
-  errors: unknown;
-}
-
 interface ErrorResponse {
   ok: false;
   status: number;
-  data: ApiErrorBody;
+  /** The API's error body as sent (read it with `readApiError`), or `{ message, errors }` for failures of our own. */
+  data: unknown;
 }
 
 interface DataResponse<T> {
@@ -29,7 +24,14 @@ interface DataResponse<T> {
 
 type ServerResponse<T> = DataResponse<T> | ErrorResponse;
 
+type QueryValue = string | number | boolean | null | undefined;
+
+/** Query parameters. `null` and `undefined` are left out; arrays repeat the key (`ids=1&ids=2`). */
+export type QueryParams = Record<string, QueryValue | readonly QueryValue[]>;
+
 export interface RequestOptions extends ApiInterceptorOptions {
+  /** Added to the URL as the query string, encoded. For PHP-style arrays name the key `ids[]`. */
+  query?: QueryParams;
   /** Cache tags to clear after a successful request. Only works in server actions and route handlers. */
   revalidateTags?: string[];
 }
@@ -56,7 +58,7 @@ class ApiRequestError extends Error {
  * API's base path, and `@evil.example` would turn `API_URL`'s host into a username and send the
  * request (and the user's token) to another server.
  */
-const buildApiUrl = (slug: string): URL => {
+const buildApiUrl = (slug: string, query?: QueryParams): URL => {
   if (!API_URL) {
     throw new Error('API_URL is not set. Add it to your environment (see .env.example).');
   }
@@ -74,6 +76,14 @@ const buildApiUrl = (slug: string): URL => {
     throw new ApiRequestError(`Invalid API path "${slug}": it leaves API_URL.`);
   }
 
+  for (const [key, value] of Object.entries(query ?? {})) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item !== null && item !== undefined) {
+        url.searchParams.append(key, String(item));
+      }
+    }
+  }
+
   return url;
 };
 
@@ -88,10 +98,10 @@ export const executeServerRequest = async <T = unknown>(
   slug: string,
   options: RequestOptions = {},
 ): Promise<ServerResponse<T>> => {
-  const { revalidateTags, ...fetchOptions } = options;
+  const { revalidateTags, query, ...fetchOptions } = options;
 
   try {
-    const response = await apiInterceptor(buildApiUrl(slug).href, fetchOptions);
+    const response = await apiInterceptor(buildApiUrl(slug, query).href, fetchOptions);
     let responseData: unknown;
 
     try {
@@ -104,7 +114,7 @@ export const executeServerRequest = async <T = unknown>(
       return {
         ok: false,
         status: response.status,
-        data: responseData as ApiErrorBody,
+        data: responseData,
       };
     }
 
@@ -126,7 +136,7 @@ export const executeServerRequest = async <T = unknown>(
       return {
         ok: false,
         status: 504,
-        data: { status: 'error', message: 'The API did not respond in time.', errors: null },
+        data: { message: 'The API did not respond in time.', errors: null },
       };
     }
 
@@ -134,7 +144,6 @@ export const executeServerRequest = async <T = unknown>(
       ok: false,
       status: hasProperty(error, 'status') && typeof error.status === 'number' ? error.status : 500,
       data: {
-        status: 'error',
         message: getErrorMessage(error),
         errors: hasProperty(error, 'errors') && typeof error.errors === 'object' ? error.errors : null,
       },

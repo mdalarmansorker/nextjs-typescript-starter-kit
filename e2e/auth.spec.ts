@@ -63,9 +63,11 @@ test.describe('logging in', () => {
 });
 
 test.describe('logging out', () => {
-  test('the logout button clears the session', async ({ page, context, baseURL }) => {
+  test('the logout button revokes the token and clears the session', async ({ page, context, baseURL, request }) => {
+    const token = `logout-${Date.now()}`;
+
     await context.addCookies([
-      ...Object.values(COOKIE_NAMES).map(name => ({ name, value: 'stale', url: baseURL! })),
+      ...Object.values(COOKIE_NAMES).map(name => ({ name, value: token, url: baseURL! })),
       { name: 'unrelated', value: 'kept', url: baseURL! },
     ]);
 
@@ -74,6 +76,7 @@ test.describe('logging out', () => {
 
     await expect(page).toHaveURL('/');
     expect((await context.cookies()).map(cookie => cookie.name)).toEqual(['unrelated']);
+    expect(await (await request.get('http://127.0.0.1:4010/revoked-tokens')).json()).toContain(token);
 
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login/);

@@ -72,6 +72,26 @@ describe('executeServerRequest', () => {
     expect(apiInterceptor).toHaveBeenCalledWith('https://api.test/items', { method: 'POST', requiresAuth: true });
   });
 
+  it('adds query parameters, encoded, and leaves out empty ones', async () => {
+    respond({});
+
+    await executeServerRequest('/items', {
+      query: { search: 'a&b c', page: 2, active: true, ids: [1, 2], 'tags[]': ['x'], empty: null, gone: undefined },
+    });
+
+    const url = new URL(vi.mocked(apiInterceptor).mock.calls[0]![0]);
+
+    expect(url.pathname).toBe('/items');
+    expect([...url.searchParams]).toEqual([
+      ['search', 'a&b c'],
+      ['page', '2'],
+      ['active', 'true'],
+      ['ids', '1'],
+      ['ids', '2'],
+      ['tags[]', 'x'],
+    ]);
+  });
+
   it('returns the parsed body of a successful response', async () => {
     respond({ id: 1 }, 201);
 
@@ -117,7 +137,7 @@ describe('executeServerRequest', () => {
     expect(await executeServerRequest('/me')).toEqual({
       ok: false,
       status: 401,
-      data: { status: 'error', message: 'Authentication failed.', errors: { token: 'expired' } },
+      data: { message: 'Authentication failed.', errors: { token: 'expired' } },
     });
   });
 
@@ -127,7 +147,7 @@ describe('executeServerRequest', () => {
     expect(await executeServerRequest('/items')).toEqual({
       ok: false,
       status: 500,
-      data: { status: 'error', message: 'fetch failed', errors: null },
+      data: { message: 'fetch failed', errors: null },
     });
   });
 
@@ -137,7 +157,7 @@ describe('executeServerRequest', () => {
     expect(await executeServerRequest('/slow')).toEqual({
       ok: false,
       status: 504,
-      data: { status: 'error', message: 'The API did not respond in time.', errors: null },
+      data: { message: 'The API did not respond in time.', errors: null },
     });
   });
 

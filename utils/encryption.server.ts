@@ -2,6 +2,8 @@ import 'server-only';
 
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
+import { parseEncryptionKey } from './encryption-key';
+
 type JsonPrimitive = string | number | boolean;
 type JsonNested = JsonValue | null;
 type JsonValue = JsonPrimitive | JsonNested[] | { [key: string]: JsonNested };
@@ -55,28 +57,6 @@ const MAX_ENCODED_LENGTH = 64 * 1024;
 const MAX_PLAINTEXT_BYTES = Math.floor((MAX_ENCODED_LENGTH * 3) / 4) - IV_LENGTH - TAG_LENGTH;
 const BASE64URL_REGEX = /^[A-Za-z0-9_-]+$/;
 
-/**
- * Validates and decodes a 32-byte key from Base64 or Hex.
- */
-const parseKey = (rawSecret: string, envName: string): Buffer => {
-  const secret = rawSecret.trim();
-
-  // 1. 64-character Hex key (32 bytes)
-  if (/^[0-9a-fA-F]{64}$/.test(secret)) {
-    return Buffer.from(secret, 'hex');
-  }
-
-  // 2. Canonical 32-byte Base64 key
-  const base64Key = Buffer.from(secret, 'base64');
-  if (base64Key.length === 32 && base64Key.toString('base64') === secret) {
-    return base64Key;
-  }
-
-  throw new Error(
-    `${envName} must be a valid 32-byte Base64-encoded key (e.g. openssl rand -base64 32) or a 64-character hex key.`,
-  );
-};
-
 let primaryKey: Buffer | null = null;
 let previousKey: Buffer | null = null;
 
@@ -102,10 +82,10 @@ const getKeys = (): { primary: Buffer; previous: Buffer | null } => {
     throw new Error('ENCRYPTION_KEY is not defined in environment variables.');
   }
 
-  const primary = parseKey(rawKey, 'ENCRYPTION_KEY');
+  const primary = parseEncryptionKey(rawKey, 'ENCRYPTION_KEY');
 
   const rawPrevKey = process.env.ENCRYPTION_KEY_PREVIOUS?.trim();
-  const previous = rawPrevKey ? parseKey(rawPrevKey, 'ENCRYPTION_KEY_PREVIOUS') : null;
+  const previous = rawPrevKey ? parseEncryptionKey(rawPrevKey, 'ENCRYPTION_KEY_PREVIOUS') : null;
 
   // Assign only after both parsed successfully so a failure never leaves half-initialized state.
   primaryKey = primary;

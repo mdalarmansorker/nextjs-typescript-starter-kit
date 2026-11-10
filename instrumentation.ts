@@ -1,6 +1,21 @@
 import type { Instrumentation } from 'next';
 
 /**
+ * Called once when the server starts, before it handles requests. Checks the environment variables
+ * (`utils/validate-env.ts`), so a missing `API_URL` or a malformed key stops the server with a list of
+ * what's wrong. Skipped during `next build`, which runs without the runtime secrets.
+ */
+export async function register() {
+  if (process.env.NEXT_RUNTIME !== 'nodejs' || process.env.NEXT_PHASE === 'phase-production-build') {
+    return;
+  }
+
+  const { assertValidEnv } = await import('./utils/validate-env');
+
+  assertValidEnv(process.env);
+}
+
+/**
  * Called by Next.js for every error thrown while rendering a page, running a server action or route
  * handler, or in the proxy. This is the one place to send server errors to a reporting service.
  *

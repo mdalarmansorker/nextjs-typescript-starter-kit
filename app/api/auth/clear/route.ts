@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import AuthService from '@/services/api/auth.service';
+
 import { COOKIE_NAMES } from '@/constants/cookie';
 import { LOGIN_ROUTE } from '@/constants/routes';
 
@@ -49,8 +51,19 @@ export function GET(request: NextRequest) {
   return endSession(request, 307);
 }
 
-/** For logout buttons: `<form method="post" action="/api/auth/clear">`. */
-export function POST(request: NextRequest) {
+/**
+ * For logout buttons: `<form method="post" action="/api/auth/clear">`. Revokes the token on the API
+ * first (see `AuthService.logout`); the cookies are deleted even when that fails, so logout always works.
+ */
+export async function POST(request: NextRequest) {
+  if (!isCrossSite(request) && request.cookies.has(COOKIE_NAMES.ACCESS_TOKEN)) {
+    try {
+      await AuthService.logout();
+    } catch (error) {
+      console.error('Revoking the token on the API failed:', error);
+    }
+  }
+
   // 303 turns the POST into a GET of the redirect target.
   return endSession(request, 303);
 }

@@ -3,7 +3,9 @@
  * without a real backend. Add endpoints here as your e2e tests need them.
  *
  * POST /api/auth/login  { email, password }  →  200 { token } for the password "correct-password",
- *                                                422 Laravel-style validation error otherwise
+ *                                                422 `{ message, errors }` validation error otherwise
+ * POST /api/auth/logout  Bearer token          →  204, and remembers the token as revoked
+ * GET  /revoked-tokens                         →  the tokens revoked so far, for assertions
  */
 import { createServer } from 'node:http';
 
@@ -27,7 +29,21 @@ const send = (response, status, data) => {
   response.end(JSON.stringify(data));
 };
 
+const revokedTokens = [];
+
 const server = createServer(async (request, response) => {
+  if (request.method === 'POST' && request.url === '/api/auth/logout') {
+    const token = request.headers.authorization?.replace(/^Bearer /, '');
+
+    if (!token) return send(response, 401, { message: 'Unauthenticated.' });
+
+    revokedTokens.push(token);
+    response.writeHead(204);
+    return response.end();
+  }
+
+  if (request.url === '/revoked-tokens') return send(response, 200, revokedTokens);
+
   if (request.method === 'POST' && request.url === '/api/auth/login') {
     const { password } = await readJson(request);
 

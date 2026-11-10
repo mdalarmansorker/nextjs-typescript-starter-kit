@@ -47,6 +47,24 @@ describe('handleRequest', () => {
     await expect(handleRequest('/items')).rejects.toMatchObject({ status: 502, message: 'Something went wrong' });
   });
 
+  it('reads error bodies of other shapes', async () => {
+    vi.mocked(executeServerRequest).mockResolvedValue({
+      ok: false,
+      status: 422,
+      data: { detail: [{ loc: ['body', 'email'], msg: 'field required' }] },
+    });
+
+    await expect(handleRequest('/items')).rejects.toMatchObject({
+      status: 422,
+      message: 'Something went wrong',
+      fieldErrors: { email: ['field required'] },
+    });
+
+    vi.mocked(executeServerRequest).mockResolvedValue({ ok: false, status: 403, data: { error: 'Not allowed' } });
+
+    await expect(handleRequest('/items')).rejects.toMatchObject({ status: 403, message: 'Not allowed' });
+  });
+
   describe('parse', () => {
     const Item = z.object({ id: z.number() });
 
@@ -99,6 +117,13 @@ describe('handleRequest', () => {
 
     it('does not end the session on a 401 from a public request', async () => {
       await expect(handleRequest('/login', { method: 'POST' })).rejects.toBeInstanceOf(ApiError);
+      expect(redirect).not.toHaveBeenCalled();
+    });
+
+    it('throws instead of ending the session when endSessionOn401 is false', async () => {
+      await expect(handleRequest('/logout', { requiresAuth: true, endSessionOn401: false })).rejects.toMatchObject({
+        status: 401,
+      });
       expect(redirect).not.toHaveBeenCalled();
     });
   });

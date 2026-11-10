@@ -49,7 +49,11 @@ Use a form that POSTs to `/api/auth/clear` (see `app/dashboard/page.tsx`):
 </form>
 ```
 
-The route deletes every cookie in `COOKIE_NAMES` and redirects to `/`. If your API keeps server-side sessions, also call its logout endpoint from a server action first.
+The POST first calls `AuthService.logout()`, which sends `POST AUTH_LOGOUT` (`/auth/logout` in `constants/api/auth.api.ts`) with the token so the API can revoke it. A token copied before logout then stops working too. Then the route deletes every cookie in `COOKIE_NAMES` and redirects to `/`.
+
+- Logout never depends on the API: if the call fails or times out (5 seconds), the error is logged and the cookies are still deleted.
+- A 401 from the logout endpoint doesn't redirect: the token may already have been invalid.
+- Change `AUTH_LOGOUT` to your API's path, or set it to `null` if your API has no logout endpoint (for example, stateless JWTs that only expire).
 
 ## Expired sessions
 

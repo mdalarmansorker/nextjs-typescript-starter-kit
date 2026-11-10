@@ -2,7 +2,7 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { AUTH_LOGIN } from '@/constants/api';
+import { AUTH_LOGIN, AUTH_LOGOUT } from '@/constants/api';
 
 import { handleRequest } from './base.service';
 
@@ -28,4 +28,20 @@ export default class AuthService {
       body: JSON.stringify(payload),
       parse: data => LoginResponseSchema.parse(data),
     });
+
+  /**
+   * Revokes the current token on the API, so a copied token stops working too. Does nothing when
+   * `AUTH_LOGOUT` is `null`. A 401 throws instead of redirecting: the token may already be invalid.
+   */
+  static logout = async (): Promise<void> => {
+    if (!AUTH_LOGOUT) return;
+
+    await handleRequest(AUTH_LOGOUT, {
+      method: 'POST',
+      requiresAuth: true,
+      endSessionOn401: false,
+      // Logging out must not wait on a slow API for long.
+      timeoutMs: 5_000,
+    });
+  };
 }
