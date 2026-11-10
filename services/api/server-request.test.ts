@@ -104,6 +104,39 @@ describe('executeServerRequest', () => {
     expect(await executeServerRequest('/items/1')).toEqual({ ok: true, status: 204, data: null });
   });
 
+  it('reads a file as a Blob with responseType blob', async () => {
+    vi.mocked(apiInterceptor).mockResolvedValue(
+      new Response('a,b\n1,2', { status: 200, headers: { 'Content-Type': 'text/csv' } }),
+    );
+
+    const result = await executeServerRequest<Blob>('/export', { responseType: 'blob' });
+
+    expect(result.ok && result.data).toBeInstanceOf(Blob);
+    expect(result.ok && (await result.data.text())).toBe('a,b\n1,2');
+    expect(result.ok && result.data.type).toBe('text/csv');
+    expect(apiInterceptor).toHaveBeenCalledWith('https://api.test/export', {});
+  });
+
+  it('reads text with responseType text', async () => {
+    respond('plain text');
+
+    expect(await executeServerRequest('/notes', { responseType: 'text' })).toEqual({
+      ok: true,
+      status: 200,
+      data: 'plain text',
+    });
+  });
+
+  it('still reads an error body as JSON when a file was asked for', async () => {
+    respond({ message: 'Report not found' }, 404);
+
+    expect(await executeServerRequest('/export', { responseType: 'blob' })).toEqual({
+      ok: false,
+      status: 404,
+      data: { message: 'Report not found' },
+    });
+  });
+
   it('returns the API error body of a failed response', async () => {
     const error = { status: 'error', message: 'The given data was invalid.', errors: { name: ['Required'] } };
     respond(error, 422);

@@ -29,6 +29,8 @@ After generating:
 3. Remove `requiresAuth: true` from public endpoints, add `parse` to check responses, and add `revalidateTags` to writes if you cache reads. See [api-layer.md](api-layer.md).
 4. Build the view: read data in the page (a Server Component) and write through server actions. See [api-layer.md](api-layer.md#where-requests-run).
 
+[example-module.md](example-module.md) walks through `projects`, a module generated this way and filled in with a paginated list, forms, validation errors and delete.
+
 ## make:type
 
 ```bash

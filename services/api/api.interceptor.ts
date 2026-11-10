@@ -39,7 +39,8 @@ const apiInterceptor = async (url: string, options: ApiInterceptorOptions = {}):
   // Prepare headers
   const headers = new Headers(fetchOptions.headers);
 
-  headers.set('Accept', 'application/json');
+  // JSON unless the caller asks for something else (e.g. `Accept: application/pdf` for a download).
+  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
 
   if (fetchOptions.body && !(fetchOptions.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');

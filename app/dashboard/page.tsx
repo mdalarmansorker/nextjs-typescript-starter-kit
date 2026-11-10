@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -20,6 +22,12 @@ export default function DashboardPage() {
         </form>
       </header>
       <p className="text-zinc-600 dark:text-zinc-400">You are logged in. Build your app from here.</p>
+      <p>
+        <Link href="/projects" className="font-medium underline underline-offset-4">
+          Projects
+        </Link>{' '}
+        is an example CRUD module (list, pagination, create, edit, delete) to copy from.
+      </p>
     </main>
   );
 }
