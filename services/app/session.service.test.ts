@@ -39,6 +39,15 @@ describe('saveSession', () => {
     expect(CookieService.store).toHaveBeenCalledWith('__rt', 'ref', { expires: 15, ...options });
   });
 
+  it('expires the refresh cookie with the refresh token when the API says when', async () => {
+    await saveSession({ accessToken: 'abc', refreshToken: 'ref', refreshExpiresIn: 86400 });
+
+    expect(CookieService.store).toHaveBeenCalledWith('__rt', 'ref', {
+      expires: new Date(NOW.getTime() + 86400_000),
+      ...options,
+    });
+  });
+
   it('keeps the full lifetime of a short-lived token', async () => {
     await saveSession({ accessToken: 'abc', expiresIn: 45 });
 

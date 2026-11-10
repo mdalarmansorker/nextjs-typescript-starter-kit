@@ -2,7 +2,7 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { AUTH_REFRESH } from '@/constants/api';
+import { AUTH_REFRESH, AUTH_REFRESH_TOKEN_IN } from '@/constants/api';
 
 import { ApiError, readApiError } from './api-errors';
 import { executeServerRequest } from './server-request';
@@ -14,7 +14,21 @@ export interface Session {
   refreshToken?: string;
   /** Access token lifetime in seconds, when the API says. */
   expiresIn?: number;
+  /** Refresh token lifetime in seconds, when the API says. */
+  refreshExpiresIn?: number;
 }
+
+const ACCESS_TOKEN_KEYS = ['token', 'access_token', 'accessToken', 'access'];
+
+/** Unwraps `{ status, data: { access_token, … } }`, the envelope many APIs put around every response. */
+const unwrapEnvelope = (body: unknown): unknown => {
+  if (typeof body !== 'object' || body === null) return body;
+
+  const data: unknown = (body as Record<string, unknown>).data;
+  const hasTokenAtTop = ACCESS_TOKEN_KEYS.some(key => key in body);
+
+  return !hasTokenAtTop && typeof data === 'object' && data !== null ? data : body;
+};
 
 /** A non-empty string; anything else (missing, `null`, `''`) counts as not sent. */
 const text = z.unknown().transform(value => (typeof value === 'string' && value !== '' ? value : undefined));
@@ -31,23 +45,29 @@ const seconds = z.unknown().transform(value => {
  *
  * - access token: `token` (Laravel Sanctum), `access_token` (OAuth 2), `accessToken`, `access` (Django SimpleJWT)
  * - refresh token: `refresh_token`, `refreshToken`, `refresh`
- * - lifetime in seconds: `expires_in`, `expiresIn`
+ * - lifetimes in seconds: `expires_in`, `expiresIn`, `refresh_expires_in`, `refreshExpiresIn`
  *
- * Optional fields that are `null`, empty or malformed are ignored rather than failing the login.
- * Change it if your API sends something else (e.g. nests the tokens under `data`).
+ * The fields may also sit under `data` (`{ status, data: { access_token } }`). Optional fields that
+ * are `null`, empty or malformed are ignored rather than failing the login. Change it if your API
+ * sends something else.
  */
 export const TokenResponseSchema = z
-  .object({
-    token: text.optional(),
-    access_token: text.optional(),
-    accessToken: text.optional(),
-    access: text.optional(),
-    refresh_token: text.optional(),
-    refreshToken: text.optional(),
-    refresh: text.optional(),
-    expires_in: seconds.optional(),
-    expiresIn: seconds.optional(),
-  })
+  .preprocess(
+    unwrapEnvelope,
+    z.object({
+      token: text.optional(),
+      access_token: text.optional(),
+      accessToken: text.optional(),
+      access: text.optional(),
+      refresh_token: text.optional(),
+      refreshToken: text.optional(),
+      refresh: text.optional(),
+      expires_in: seconds.optional(),
+      expiresIn: seconds.optional(),
+      refresh_expires_in: seconds.optional(),
+      refreshExpiresIn: seconds.optional(),
+    }),
+  )
   .transform((data, ctx): Session => {
     const accessToken = data.access_token ?? data.accessToken ?? data.access ?? data.token;
 
@@ -61,6 +81,7 @@ export const TokenResponseSchema = z
       accessToken,
       refreshToken: data.refresh_token ?? data.refreshToken ?? data.refresh,
       expiresIn: data.expires_in ?? data.expiresIn,
+      refreshExpiresIn: data.refresh_expires_in ?? data.refreshExpiresIn,
     };
   });
 
@@ -74,11 +95,13 @@ const sendRefresh = async (refreshToken: string): Promise<Session> => {
     throw new ApiError('Token refresh is turned off (AUTH_REFRESH is null).', 400);
   }
 
-  // Change the body (or send the token as a header) if your API expects it differently.
+  // AUTH_REFRESH_TOKEN_IN picks body or header; change this if your API expects something else.
   // This calls executeServerRequest, not handleRequest: handleRequest calls this on a 401.
   const result = await executeServerRequest(AUTH_REFRESH, {
     method: 'POST',
-    body: JSON.stringify({ refresh_token: refreshToken }),
+    ...(AUTH_REFRESH_TOKEN_IN === 'bearer'
+      ? { headers: { Authorization: `Bearer ${refreshToken}` } }
+      : { body: JSON.stringify({ refresh_token: refreshToken }) }),
     timeoutMs: 5_000,
   });
 

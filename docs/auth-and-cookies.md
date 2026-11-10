@@ -20,8 +20,8 @@ How users log in and out, how pages are protected, how tokens are stored and ref
 ## Logging in
 
 1. The user submits `/login`. `app/login/actions.ts` checks the form with zod, then calls `AuthService.login`, which posts to `AUTH_LOGIN` (`/auth/login`).
-2. The response is checked against `TokenResponseSchema` in `services/api/auth-tokens.ts`, which accepts the common names: `token`, `access_token`, `accessToken` or `access` for the access token; `refresh_token`, `refreshToken` or `refresh` for the refresh token; `expires_in` or `expiresIn` for its lifetime in seconds. **If your API sends something else** (e.g. tokens nested under `data`), change the schema.
-3. `saveSession(session)` stores the access token in the `__at` cookie (`httpOnly`, `secure` outside development, `sameSite: 'lax'`). The cookie expires 30 seconds before the token when the API sends `expires_in`, else after 15 days. A refresh token goes in the `__rt` cookie for 15 days.
+2. The response is checked against `TokenResponseSchema` in `services/api/auth-tokens.ts`, which accepts the common names: `token`, `access_token`, `accessToken` or `access` for the access token; `refresh_token`, `refreshToken` or `refresh` for the refresh token; `expires_in` or `expiresIn` for its lifetime in seconds, and `refresh_expires_in` or `refreshExpiresIn` for the refresh token's. The fields may sit at the top level or inside a `data` envelope (`{ "status": "success", "data": { "access_token": "…" } }`). **If your API sends something else**, change the schema.
+3. `saveSession(session)` stores the access token in the `__at` cookie (`httpOnly`, `secure` outside development, `sameSite: 'lax'`). The cookie expires 30 seconds before the token when the API sends `expires_in`, else after 15 days. A refresh token goes in the `__rt` cookie, which expires with `refresh_expires_in` when sent, else after 15 days.
 4. The user is sent to the page in `?redirect=`, or to `AFTER_LOGIN_ROUTE` (`/dashboard`).
 
 Errors the API returns for the login (4xx) are shown on the form with their field errors. Server-side failures (API down, timeout) show a generic message and are logged.
@@ -81,7 +81,7 @@ The first case covers most expiries before any API call is made, because the acc
 
 If the API rejects the refresh token (4xx), the session ends and the user goes to login, keeping the page to return to. If the API can't be reached (5xx, timeout), the error is shown instead, so an outage doesn't log everyone out. A second 401 right after a successful refresh ends the session instead of looping.
 
-**The refresh request** is `POST AUTH_REFRESH` (`/auth/refresh`) with `{ "refresh_token": "…" }`, built in `sendRefresh` in `services/api/auth-tokens.ts`. Change it there if your API expects another body (Django SimpleJWT: `{ refresh }`; OAuth 2: form-encoded `grant_type=refresh_token`) or the token in a header. The response goes through `TokenResponseSchema`, like the login response. A response without a new refresh token keeps the old one.
+**The refresh request** is `POST AUTH_REFRESH` (`/auth/refresh`). With `AUTH_REFRESH_TOKEN_IN = 'body'` (default) it sends `{ "refresh_token": "…" }`; with `'bearer'` it sends `Authorization: Bearer <refresh token>` and no body. Both are in `constants/api/auth.api.ts`. For another format (Django SimpleJWT: `{ refresh }`; OAuth 2: form-encoded `grant_type=refresh_token`), change `sendRefresh` in `services/api/auth-tokens.ts`. The response goes through `TokenResponseSchema`, like the login response. A response without a new refresh token keeps the old one.
 
 **Rotating refresh tokens.** Many APIs issue a new refresh token on every refresh and reject the old one. When several requests need a refresh at once (parallel requests, several tabs), they share one API call: results are reused for 10 seconds per refresh token. This sharing is per server process; with several instances, give the API a short grace period for the previous refresh token.
 
@@ -97,13 +97,13 @@ What makes it safe: `encodeRedirectPath` and `decodeRedirectPath` only accept pa
 
 `constants/cookie.ts`:
 
-| Constant                     | Value   | Use                                                                                                     |
-| ---------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| `COOKIE_NAMES.ACCESS_TOKEN`  | `__at`  | Token sent to the API as `Bearer`                                                                       |
-| `COOKIE_NAMES.REFRESH_TOKEN` | `__rt`  | Refresh token, if your API issues one                                                                   |
-| `COOKIE_NAMES.PERMISSIONS`   | `__prm` | Cached permissions, if you need them                                                                    |
-| `AUTH_COOKIES_DURATION_DAYS` | `15`    | Lifetime of the refresh-token cookie, and of the access-token cookie when the API sends no `expires_in` |
-| `COOKIE_SECURE`              | bool    | `true` everywhere except `next dev`                                                                     |
+| Constant                     | Value   | Use                                                                       |
+| ---------------------------- | ------- | ------------------------------------------------------------------------- |
+| `COOKIE_NAMES.ACCESS_TOKEN`  | `__at`  | Token sent to the API as `Bearer`                                         |
+| `COOKIE_NAMES.REFRESH_TOKEN` | `__rt`  | Refresh token, if your API issues one                                     |
+| `COOKIE_NAMES.PERMISSIONS`   | `__prm` | Cached permissions, if you need them                                      |
+| `AUTH_COOKIES_DURATION_DAYS` | `15`    | Cookie lifetime when the API sends no `expires_in` / `refresh_expires_in` |
+| `COOKIE_SECURE`              | bool    | `true` everywhere except `next dev`                                       |
 
 Every name in `COOKIE_NAMES` is deleted at logout, so add new auth cookies there. Don't use `__ts`: it is reserved for theme settings.
 

@@ -14,7 +14,8 @@ export default class AuthService {
   static login = (payload: LoginPayload) =>
     handleRequest<Session>(AUTH_LOGIN, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      // TEST SETUP (academy backend): it logs in with `username` (phone or email) and a `mode`. Revert before committing.
+      body: JSON.stringify({ username: payload.email, password: payload.password, mode: 'classroom' }),
       // Accepts the common token response shapes; see TokenResponseSchema to adapt it to your API.
       parse: data => TokenResponseSchema.parse(data),
     });

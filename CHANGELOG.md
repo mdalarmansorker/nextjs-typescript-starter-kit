@@ -36,6 +36,8 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - `/api/auth/clear` accepts POST for logout forms and ignores requests started by other sites.
 - `/api/auth/refresh` and `/api/auth/clear` answer client-side navigations with a full page load, so a session that expires during a `<Link>` navigation refreshes or ends properly instead of leaving a blank page.
 - `handleRequest` ends a session in a server action by deleting the cookies itself and redirecting to `/login`; redirecting a server action to `/api/auth/clear` left the user on that URL with the cookies in place.
+- `TokenResponseSchema` also reads tokens inside a `{ status, data: { … } }` envelope, and `refresh_expires_in`, which sets the refresh cookie's lifetime.
+- `AUTH_REFRESH_TOKEN_IN` (`constants/api/auth.api.ts`): send the refresh token in the body (default) or as `Authorization: Bearer`.
 - `TokenResponseSchema` ignores `null`, empty or malformed optional fields and accepts `expires_in` as a numeric string, instead of failing the login.
 - **Breaking:** `saveSession` takes `{ accessToken, refreshToken?, expiresIn? }` instead of a token string, and `AuthService.login` returns that shape. `LoginResponseSchema` is replaced by `TokenResponseSchema`.
 - Logout sends the refresh token in its body so the API can revoke it.

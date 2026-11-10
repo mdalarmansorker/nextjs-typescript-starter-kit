@@ -16,6 +16,9 @@ const EXPIRY_MARGIN_SECONDS = 30;
 const cookieOptions = (expires: number | Date) =>
   ({ expires, httpOnly: true, secure: COOKIE_SECURE, sameSite: 'lax', path: '/' }) as const;
 
+const inSeconds = (seconds: number | undefined): number | Date =>
+  seconds ? new Date(Date.now() + seconds * 1000) : AUTH_COOKIES_DURATION_DAYS;
+
 const accessCookieExpiry = (expiresIn: number | undefined): number | Date => {
   if (!expiresIn) return AUTH_COOKIES_DURATION_DAYS;
 
@@ -30,13 +33,19 @@ const accessCookieExpiry = (expiresIn: number | undefined): number | Date => {
  *
  * Both cookies are `httpOnly`, so page scripts (and any injected script) can't read the tokens. The
  * access cookie expires with the token (`expiresIn`), which lets the proxy refresh it before the next
- * page needs it. A response without a refresh token keeps the one already stored.
+ * page needs it. The refresh cookie expires with the refresh token (`refreshExpiresIn`), else after
+ * `AUTH_COOKIES_DURATION_DAYS`. A response without a refresh token keeps the one already stored.
  */
-export const saveSession = async ({ accessToken, refreshToken, expiresIn }: Session): Promise<void> => {
+export const saveSession = async ({
+  accessToken,
+  refreshToken,
+  expiresIn,
+  refreshExpiresIn,
+}: Session): Promise<void> => {
   await CookieService.store(COOKIE_NAMES.ACCESS_TOKEN, accessToken, cookieOptions(accessCookieExpiry(expiresIn)));
 
   if (refreshToken) {
-    await CookieService.store(COOKIE_NAMES.REFRESH_TOKEN, refreshToken, cookieOptions(AUTH_COOKIES_DURATION_DAYS));
+    await CookieService.store(COOKIE_NAMES.REFRESH_TOKEN, refreshToken, cookieOptions(inSeconds(refreshExpiresIn)));
   }
 };
 

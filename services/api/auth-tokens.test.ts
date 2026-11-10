@@ -5,6 +5,15 @@ import { executeServerRequest } from './server-request';
 
 vi.mock('./server-request', () => ({ executeServerRequest: vi.fn() }));
 
+const config = vi.hoisted(() => ({ refreshTokenIn: 'body' as 'body' | 'bearer' }));
+
+vi.mock('@/constants/api', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  get AUTH_REFRESH_TOKEN_IN() {
+    return config.refreshTokenIn;
+  },
+}));
+
 describe('TokenResponseSchema', () => {
   it.each([
     ['Laravel Sanctum', { token: 'a' }, { accessToken: 'a' }],
@@ -19,6 +28,15 @@ describe('TokenResponseSchema', () => {
       { accessToken: 'a', refreshToken: 'r', expiresIn: 900 },
     ],
     ['Django SimpleJWT', { access: 'a', refresh: 'r' }, { accessToken: 'a', refreshToken: 'r' }],
+    [
+      'a { status, data } envelope',
+      {
+        status: 'success',
+        data: { access_token: 'a', refresh_token: 'r', expires_in: 900, refresh_expires_in: 86400 },
+      },
+      { accessToken: 'a', refreshToken: 'r', expiresIn: 900, refreshExpiresIn: 86400 },
+    ],
+    ['top-level tokens beside a data field', { token: 'a', data: { user: {} } }, { accessToken: 'a' }],
   ])('reads the %s shape', (_name, body, expected) => {
     expect(TokenResponseSchema.parse(body)).toEqual({ refreshToken: undefined, expiresIn: undefined, ...expected });
   });
@@ -72,6 +90,20 @@ describe('refreshTokens', () => {
       body: JSON.stringify({ refresh_token: token }),
       timeoutMs: 5_000,
     });
+  });
+
+  it('sends the refresh token as a Bearer header when AUTH_REFRESH_TOKEN_IN is bearer', async () => {
+    config.refreshTokenIn = 'bearer';
+    const token = fresh();
+
+    await refreshTokens(token);
+
+    expect(executeServerRequest).toHaveBeenCalledWith('/auth/refresh', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      timeoutMs: 5_000,
+    });
+    config.refreshTokenIn = 'body';
   });
 
   it('sends one request for parallel refreshes with the same token', async () => {
