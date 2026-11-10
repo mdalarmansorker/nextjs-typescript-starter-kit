@@ -107,15 +107,16 @@ Encode values you put in a path: `` `${PROJECTS}/${encodeURIComponent(id)}` ``.
 
 `handleRequest<T>(slug, options)` accepts everything `fetch` does, plus:
 
-| Option            | Default                 | Effect                                                                                      |
-| ----------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
-| `requiresAuth`    | `false`                 | Sends `Authorization: Bearer <token>`. Fails with 401 if there is no token                  |
-| `query`           | none                    | Query parameters, encoded. `null`/`undefined` are left out; arrays repeat the key           |
-| `endSessionOn401` | `true`                  | On a 401 for a `requiresAuth` request, end the session. `false` throws the `ApiError`       |
-| `parse`           | none                    | Checks the response and returns it typed; a wrong shape throws a 502 `ApiError`             |
-| `timeoutMs`       | `API_TIMEOUT_MS` (10 s) | Cancels the request after this long; throws a 504 `ApiError`                                |
-| `revalidateTags`  | none                    | Clears these cache tags after a successful response. Server actions and route handlers only |
-| `cachedRead`      | `false`                 | Set on reads inside `use cache: private`, where `connection()` isn't allowed                |
+| Option            | Default                 | Effect                                                                                        |
+| ----------------- | ----------------------- | --------------------------------------------------------------------------------------------- |
+| `requiresAuth`    | `false`                 | Sends `Authorization: Bearer <token>`. Fails with 401 if there is no token                    |
+| `query`           | none                    | Query parameters, encoded. `null`/`undefined` are left out; arrays repeat the key             |
+| `endSessionOn401` | `true`                  | On a 401 for a `requiresAuth` request, end the session. `false` throws the `ApiError`         |
+| `parse`           | none                    | Checks the response and returns it typed; a wrong shape throws a 502 `ApiError`               |
+| `timeoutMs`       | `API_TIMEOUT_MS` (10 s) | Cancels the request after this long; throws a 504 `ApiError`                                  |
+| `revalidateTags`  | none                    | Clears these cache tags after a successful response. Server actions and route handlers only   |
+| `cachedRead`      | `false`                 | Set on reads inside `use cache: private`, where `connection()` isn't allowed                  |
+| `responseType`    | `'json'`                | `'text'` or `'blob'` to read a successful response as text or a file. Errors are read as JSON |
 
 `slug` is appended to `API_URL` and must start with `/`. A slug that would leave `API_URL` (`/../admin`, `@other-host`) is refused with a 400, because slugs often contain user input.
 
@@ -128,7 +129,59 @@ handleRequest('/projects', { requiresAuth: true, query: { page: 2, search, statu
 
 For APIs that expect PHP-style arrays (`status[]=active`), name the key `'status[]'`.
 
-`Accept: application/json` is always sent, and `Content-Type: application/json` when there is a body that isn't `FormData`.
+`Accept: application/json` is sent unless you set your own `Accept` header, and `Content-Type: application/json` when there is a body that isn't `FormData`.
+
+### Uploads
+
+Pass a `FormData` body. The browser-style multipart `Content-Type` (with its boundary) is set by `fetch`, so don't set one yourself:
+
+```ts
+// In a server action that received the form
+const upload = new FormData();
+upload.set('avatar', formData.get('avatar') as File);
+
+await handleRequest('/profile/avatar', { requiresAuth: true, method: 'POST', body: upload });
+```
+
+Server actions accept 1 MB of body by default; raise `experimental.serverActions.bodySizeLimit` in `next.config.ts` for larger files.
+
+### Downloads
+
+Read a file with `responseType: 'blob'` and hand it to the browser from a route handler, which keeps the token on the server:
+
+```ts
+// app/api/reports/[id]/route.ts
+export async function GET(_request: Request, { params }: RouteContext<'/api/reports/[id]'>) {
+  const { id } = await params;
+  const file = await handleRequest<Blob>(`/reports/${encodeURIComponent(id)}`, {
+    requiresAuth: true,
+    responseType: 'blob',
+    headers: { Accept: 'application/pdf' },
+  });
+
+  return new Response(file, {
+    headers: { 'Content-Type': file.type, 'Content-Disposition': `attachment; filename="report-${id}.pdf"` },
+  });
+}
+```
+
+Link to it with a plain `<a href="/api/reports/7">`. The file is held in memory, so this suits documents and exports, not very large files.
+
+### Pagination
+
+`parsePage(itemSchema, { page, perPage })` from `services/api/pagination.ts` is a `parse` function for lists. It reads the common shapes (Laravel's `{ data, meta }` and paginator, Django REST Framework's `{ count, results }`, `{ items, total, page, pageSize }`, `{ data, pagination }`, any of them inside a `{ status, data }` envelope, or a plain array) and returns the same `Page<T>` every time:
+
+```ts
+static index = ({ page = 1 } = {}): Promise<Page<Project>> =>
+  handleRequest(PROJECTS, {
+    requiresAuth: true,
+    query: { page, per_page: 10 },
+    parse: parsePage(ProjectSchema, { page, perPage: 10 }),
+  });
+// → { items: Project[], page, perPage, total, lastPage }
+```
+
+Numbers the API leaves out come from what you asked for (`{ page, perPage }`) or are worked out from the rest. `components/Pagination.tsx` renders previous / next links for a `Page`. See [example-module.md](example-module.md) for a full list page.
 
 ### Checking responses with `parse`
 

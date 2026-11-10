@@ -34,7 +34,24 @@ export interface RequestOptions extends ApiInterceptorOptions {
   query?: QueryParams;
   /** Cache tags to clear after a successful request. Only works in server actions and route handlers. */
   revalidateTags?: string[];
+  /**
+   * How to read a successful response: `'json'` (default), `'text'`, or `'blob'` for files (PDF, CSV,
+   * images). Error responses are always read as JSON, since that's where APIs put the message.
+   */
+  responseType?: 'json' | 'text' | 'blob';
 }
+
+/** Reads the body; `null` for an empty or unreadable one (e.g. a 204). */
+const readBody = async (response: Response, type: 'json' | 'text' | 'blob'): Promise<unknown> => {
+  try {
+    if (type === 'blob') return await response.blob();
+    if (type === 'text') return await response.text();
+
+    return await response.json();
+  } catch {
+    return null;
+  }
+};
 
 const revalidateCacheTags = (tags: string[]) => {
   for (const tag of tags) {
@@ -98,17 +115,11 @@ export const executeServerRequest = async <T = unknown>(
   slug: string,
   options: RequestOptions = {},
 ): Promise<ServerResponse<T>> => {
-  const { revalidateTags, query, ...fetchOptions } = options;
+  const { revalidateTags, query, responseType = 'json', ...fetchOptions } = options;
 
   try {
     const response = await apiInterceptor(buildApiUrl(slug, query).href, fetchOptions);
-    let responseData: unknown;
-
-    try {
-      responseData = await response.json();
-    } catch {
-      responseData = null;
-    }
+    const responseData = await readBody(response, response.ok ? responseType : 'json');
 
     if (!response.ok) {
       return {

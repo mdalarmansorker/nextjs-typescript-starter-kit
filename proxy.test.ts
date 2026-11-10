@@ -59,9 +59,9 @@ describe('proxy', () => {
   });
 
   it('passes the current path to server code and overwrites a value sent by the browser', () => {
-    const res = proxy(request('/projects?page=2', { headers: { 'x-current-path': '/forged' } }));
+    const res = proxy(request('/about?page=2', { headers: { 'x-current-path': '/forged' } }));
 
-    expect(forwardedHeader(res, 'x-current-path')).toBe('/projects?page=2');
+    expect(forwardedHeader(res, 'x-current-path')).toBe('/about?page=2');
   });
 
   describe('token refresh', () => {

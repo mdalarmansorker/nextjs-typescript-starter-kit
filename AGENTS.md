@@ -47,6 +47,8 @@ Scaffold a new feature with `npm run make:module <name>` (page, view, service, t
 - The API layer imports `server-only`. Read data in Server Components; change data in server actions. Don't use server actions for reads, and never import `services/api` into a client component.
 - Pass `parse` with a zod schema so responses are checked at runtime.
 - Pass query parameters with the `query` option, not by building the query string.
+- Read paginated lists with `parse: parsePage(ItemSchema, { page, perPage })` (`services/api/pagination.ts`); render them with `components/Pagination.tsx`. Files: `responseType: 'blob'`.
+- For a new resource, follow the `projects` example module (`docs/example-module.md`): service with zod schemas, reads in the page, writes in server actions that return 4xx errors to a `useActionState` form.
 - API error bodies are read by `readApiError` in `services/api/api-errors.ts`; adapt it there, not per call. Forms use `ApiError.fieldErrors` (`{ field: ['message'] }`).
 - `handleRequest` throws `ApiError` (`status`, `message`, `errors`, `fieldErrors`). In server actions, catch it and **return** `{ message, fieldErrors }` for 4xx; rethrow or log 5xx. Messages of errors thrown from server actions are hidden in production.
 - Encode user input in paths: `` `${PROJECTS}/${encodeURIComponent(id)}` ``.
