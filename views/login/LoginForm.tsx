@@ -2,6 +2,11 @@
 
 import { useActionState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+
 import { login, type LoginState } from '@/app/login/actions';
 
 interface LoginFormProps {
@@ -9,7 +14,7 @@ interface LoginFormProps {
   redirect?: string;
 }
 
-interface FieldProps {
+interface LoginFieldProps {
   name: 'email' | 'password';
   label: string;
   type: string;
@@ -19,72 +24,74 @@ interface FieldProps {
 }
 
 /** A labelled input with its error linked by aria-describedby, so screen readers read it with the field. */
-function Field({ name, label, type, autoComplete, defaultValue, errors }: FieldProps) {
+function LoginField({ name, label, type, autoComplete, defaultValue, errors }: LoginFieldProps) {
   const errorId = `${name}-error`;
+  const invalid = Boolean(errors?.length);
 
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium">
-        {label}
-      </label>
-      <input
+    <Field data-invalid={invalid || undefined}>
+      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+      <Input
         id={name}
         name={name}
         type={type}
         autoComplete={autoComplete}
         required
         defaultValue={defaultValue}
-        aria-invalid={errors ? true : undefined}
-        aria-describedby={errors ? errorId : undefined}
-        className="rounded-md border border-zinc-300 px-3 py-2 aria-invalid:border-red-600 dark:border-zinc-700 dark:bg-zinc-900"
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? errorId : undefined}
       />
-      {errors && (
-        <p id={errorId} className="text-sm text-red-600">
-          {errors[0]}
-        </p>
-      )}
-    </div>
+      {invalid && <FieldError id={errorId}>{errors?.[0]}</FieldError>}
+    </Field>
   );
 }
 
 export default function LoginForm({ redirect }: LoginFormProps) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
+  // Laravel-style APIs often repeat a field error as the message; show it once, next to the field.
+  const fieldMessages = Object.values(state.fieldErrors ?? {}).flat();
+  const formMessage = state.message && !fieldMessages.includes(state.message) ? state.message : undefined;
 
   return (
-    <form action={formAction} className="flex w-full max-w-sm flex-col gap-4" noValidate>
-      <h1 className="text-2xl font-semibold">Log in</h1>
+    <Card className="w-full max-w-sm">
+      <CardHeader>
+        <CardTitle>
+          <h1 className="text-2xl font-semibold">Log in</h1>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form action={formAction} noValidate>
+          <FieldGroup>
+            {formMessage && (
+              <p role="alert" className="text-sm text-destructive">
+                {formMessage}
+              </p>
+            )}
 
-      {state.message && (
-        <p role="alert" className="text-sm text-red-600">
-          {state.message}
-        </p>
-      )}
+            <LoginField
+              name="email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              defaultValue={state.email}
+              errors={state.fieldErrors?.email}
+            />
+            <LoginField
+              name="password"
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              errors={state.fieldErrors?.password}
+            />
 
-      <Field
-        name="email"
-        label="Email"
-        type="email"
-        autoComplete="email"
-        defaultValue={state.email}
-        errors={state.fieldErrors?.email}
-      />
-      <Field
-        name="password"
-        label="Password"
-        type="password"
-        autoComplete="current-password"
-        errors={state.fieldErrors?.password}
-      />
+            {redirect && <input type="hidden" name="redirect" value={redirect} />}
 
-      {redirect && <input type="hidden" name="redirect" value={redirect} />}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-full bg-foreground px-5 py-2 font-medium text-background transition-opacity disabled:opacity-60"
-      >
-        {pending ? 'Logging in…' : 'Log in'}
-      </button>
-    </form>
+            <Button type="submit" size="lg" disabled={pending}>
+              {pending ? 'Logging in…' : 'Log in'}
+            </Button>
+          </FieldGroup>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
+
 export const metadata: Metadata = {
   title: 'Dashboard',
 };
@@ -13,13 +16,16 @@ export default function DashboardPage() {
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-8">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <form method="post" action="/api/auth/clear">
-          <button type="submit" className="font-medium underline underline-offset-4">
-            Log out
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <form method="post" action="/api/auth/clear">
+            <Button type="submit" variant="outline">
+              Log out
+            </Button>
+          </form>
+        </div>
       </header>
-      <p className="text-zinc-600 dark:text-zinc-400">You are logged in. Build your app from here.</p>
+      <p className="text-muted-foreground">You are logged in. Build your app from here.</p>
     </main>
   );
 }

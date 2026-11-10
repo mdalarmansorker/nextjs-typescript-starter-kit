@@ -22,15 +22,18 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@reduxjs/toolkit": "^2.14.0",
-    "clsx": "^2.1.1",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.5.2",
     "js-cookie": "^3.0.8",
     "lucide-react": "^1.70.0",
     "next": "^16.4.5",
+    "next-themes": "^0.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-redux": "^9.3.1",
-    "tailwind-merge": "^3.7.0",
+    "tw-animate-css": "^1.4.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -56,6 +59,7 @@
     "lint-staged": "^17.6.0",
     "postcss-styled-syntax": "^0.7.4",
     "prettier": "^3.9.10",
+    "shadcn": "^4.23.0",
     "stylelint": "^17.16.0",
     "stylelint-plugin-logical-css": "^2.1.0",
     "tailwindcss": "^4.3.5",

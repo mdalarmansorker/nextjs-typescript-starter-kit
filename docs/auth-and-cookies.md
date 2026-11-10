@@ -75,7 +75,7 @@ What makes it safe: `encodeRedirectPath` and `decodeRedirectPath` only accept pa
 | `AUTH_COOKIES_DURATION_DAYS` | `15`    | Lifetime in days                      |
 | `COOKIE_SECURE`              | bool    | `true` everywhere except `next dev`   |
 
-Every name in `COOKIE_NAMES` is deleted at logout, so add new auth cookies there. Don't use `__ts`: it is reserved for theme settings.
+Every name in `COOKIE_NAMES` is deleted at logout, so add new auth cookies there.
 
 ## CookieService
 

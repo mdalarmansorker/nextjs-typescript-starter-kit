@@ -27,10 +27,21 @@ describe('LoginForm', () => {
     await userEvent.type(screen.getByLabelText('Email'), 'ada@example.com');
     await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('These credentials do not match our records.');
+    expect(await screen.findByText('These credentials do not match our records.')).toHaveAttribute('role', 'alert');
     expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('Too short.');
     expect(screen.getByLabelText('Password')).toBeInvalid();
     expect(screen.getByLabelText('Email')).toHaveValue('ada@example.com');
+  });
+
+  it('shows a message once when the API repeats it as a field error', async () => {
+    const message = 'These credentials do not match our records.';
+    vi.mocked(login).mockResolvedValue({ message, fieldErrors: { email: [message] } });
+    render(<LoginForm />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
+
+    expect(await screen.findByLabelText('Email')).toHaveAccessibleDescription(message);
+    expect(screen.getAllByText(message)).toHaveLength(1);
   });
 
   it('sends the redirect value along with the form', async () => {

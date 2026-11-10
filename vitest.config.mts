@@ -40,10 +40,21 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['app/**', 'lib/**', 'services/**', 'utils/**', 'views/**', 'proxy.ts', 'instrumentation.ts'],
-      // Pages, layouts and metadata routes are covered by the e2e tests instead.
+      include: [
+        'app/**',
+        'components/**',
+        'lib/**',
+        'services/**',
+        'utils/**',
+        'views/**',
+        'proxy.ts',
+        'instrumentation.ts',
+      ],
+      // Pages, layouts and metadata routes are covered by the e2e tests instead. components/ui is
+      // shadcn's generated code: test how you use it, not the library.
       exclude: [
         '**/*.test.{ts,tsx}',
+        'components/ui/**',
         'app/**/{page,layout}.tsx',
         'app/{robots,sitemap}.ts',
         'app/opengraph-image.tsx',

@@ -6,6 +6,8 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 
 ### Added
 
+- shadcn/ui on Base UI (`base-nova` style): `components.json`, theme variables in `app/globals.css`, and `button`, `card`, `field`, `input`, `label`, `separator`. The login form, home, dashboard, error and 404 pages use them. See `docs/ui-components.md`.
+- Dark mode with `next-themes`: follows the system, with a toggle on the home page and dashboard.
 - Login page and server action, `httpOnly` session cookie, and route protection in `proxy.ts` (`constants/routes.ts`). An example protected page at `/dashboard`.
 - After an expired session, users return to the page they were on once they log in again.
 - `parse` option on `handleRequest` to check API responses at runtime; zod is included.
@@ -29,6 +31,9 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - Code generators run on Node's built-in TypeScript support, refuse to overwrite files, and generate server-only services.
 - Prettier formats every file type; GitHub Actions are pinned to commit SHAs.
 - Requires Node.js 22.18 or newer.
+- `cn()` comes from shadcn's `cn` package instead of `clsx` and `tailwind-merge`; the import from `@/lib/utils` is unchanged.
+- Dark mode switches on the `dark` class (set by `next-themes`) instead of `prefers-color-scheme`. Use `dark:` classes as before.
+- The login form shows a message once when the API repeats it as a field error.
 
 ### Fixed
 
@@ -41,7 +46,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 
 ### Removed
 
-- `crypto-js`, `ts-node`, `fs-extra`, `services/app/cache.service.ts`.
+- `crypto-js`, `ts-node`, `fs-extra`, `clsx`, `tailwind-merge`, `services/app/cache.service.ts`.
 
 ## [1.0.3] and earlier
 

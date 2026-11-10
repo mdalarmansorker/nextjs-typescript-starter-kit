@@ -4,21 +4,21 @@ Where code goes and the conventions that keep it consistent.
 
 ## Folders
 
-| Folder          | Holds                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------ |
-| `app/`          | Routes: pages, layouts, `error.tsx`, `not-found.tsx` and route handlers (`app/api/**`)     |
-| `views/`        | The UI of a page. `app/<route>/page.tsx` stays thin and renders a view                     |
-| `components/`   | Reusable UI shared by several views (create it when you need it)                           |
-| `services/api/` | The API layer and one service class per backend resource. See [api-layer.md](api-layer.md) |
-| `services/app/` | App-level services that aren't API calls: cookies and the login session                    |
-| `lib/`          | Redux store, typed hooks, slices (`lib/features/`) and `cn()`                              |
-| `utils/`        | Framework-free helpers. Files ending in `.server.ts` can only be imported on the server    |
-| `constants/`    | Endpoint paths (`constants/api/`), cookie names, protected routes and other fixed values   |
-| `types/`        | Shared TypeScript types, all exported from `types/index.ts`                                |
-| `scripts/`      | The `make:module` and `make:type` generators. See [code-generators.md](code-generators.md) |
-| `e2e/`          | Playwright end-to-end tests                                                                |
-| `docs/`         | This documentation                                                                         |
-| `public/`       | Static files served from `/`                                                               |
+| Folder          | Holds                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `app/`          | Routes: pages, layouts, `error.tsx`, `not-found.tsx` and route handlers (`app/api/**`)                                   |
+| `views/`        | The UI of a page. `app/<route>/page.tsx` stays thin and renders a view                                                   |
+| `components/`   | Reusable UI shared by several views. `components/ui/` holds the shadcn components ([ui-components.md](ui-components.md)) |
+| `services/api/` | The API layer and one service class per backend resource. See [api-layer.md](api-layer.md)                               |
+| `services/app/` | App-level services that aren't API calls: cookies and the login session                                                  |
+| `lib/`          | Redux store, typed hooks, slices (`lib/features/`) and `cn()`                                                            |
+| `utils/`        | Framework-free helpers. Files ending in `.server.ts` can only be imported on the server                                  |
+| `constants/`    | Endpoint paths (`constants/api/`), cookie names, protected routes and other fixed values                                 |
+| `types/`        | Shared TypeScript types, all exported from `types/index.ts`                                                              |
+| `scripts/`      | The `make:module` and `make:type` generators. See [code-generators.md](code-generators.md)                               |
+| `e2e/`          | Playwright end-to-end tests                                                                                              |
+| `docs/`         | This documentation                                                                                                       |
+| `public/`       | Static files served from `/`                                                                                             |
 
 ## Naming
 

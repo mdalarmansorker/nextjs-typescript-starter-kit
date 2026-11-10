@@ -81,7 +81,7 @@ expect(res.status).toBe(307);
 
 ### Coverage
 
-`npm run test:coverage` fails when coverage of `app/`, `lib/`, `services/`, `utils/`, `views/` and `proxy.ts` (pages, layouts and metadata routes excluded; the e2e tests cover those) drops below 80% of lines, statements and functions, or 75% of branches. CI runs it on every pull request. Raise the numbers in `vitest.config.mts` as coverage grows; don't lower them to make a build pass.
+`npm run test:coverage` fails when coverage of `app/`, `components/`, `lib/`, `services/`, `utils/`, `views/` and `proxy.ts` (pages, layouts and metadata routes excluded, since the e2e tests cover those; and the generated shadcn code in `components/ui/`) drops below 80% of lines, statements and functions, or 75% of branches. CI runs it on every pull request. Raise the numbers in `vitest.config.mts` as coverage grows; don't lower them to make a build pass.
 
 ## End-to-end tests
 

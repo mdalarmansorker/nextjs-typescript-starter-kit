@@ -4,6 +4,8 @@ import type { Metadata } from 'next';
 
 import StoreProvider from '@/lib/StoreProvider';
 
+import { ThemeProvider } from '@/components/theme-provider';
+
 import './globals.css';
 
 const geistSans = Geist({
@@ -32,9 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <StoreProvider>{children}</StoreProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <StoreProvider>{children}</StoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

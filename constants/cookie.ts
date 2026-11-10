@@ -1,5 +1,4 @@
 export const COOKIE_NAMES = {
-  // Don't add '__ts' because it is used for theme settings.
   ACCESS_TOKEN: '__at',
   REFRESH_TOKEN: '__rt',
   PERMISSIONS: '__prm',

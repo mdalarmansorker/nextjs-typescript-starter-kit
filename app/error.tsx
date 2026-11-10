@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 
+import { Button } from '@/components/ui/button';
+
 interface ErrorPageProps {
   /** Errors from Server Components arrive as an Error with only a generic message and a `digest` in production. */
   error: unknown;
@@ -24,15 +26,9 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
       <h1 className="text-2xl font-semibold">Something went wrong</h1>
-      <p className="text-zinc-600 dark:text-zinc-400">Please try again. If it keeps happening, contact support.</p>
-      {digest && <p className="text-sm text-zinc-500">Reference: {digest}</p>}
-      <button
-        type="button"
-        onClick={retry}
-        className="rounded-full bg-foreground px-5 py-2 font-medium text-background transition-colors hover:opacity-90"
-      >
-        Try again
-      </button>
+      <p className="text-muted-foreground">Please try again. If it keeps happening, contact support.</p>
+      {digest && <p className="text-sm text-muted-foreground">Reference: {digest}</p>}
+      <Button onClick={retry}>Try again</Button>
     </main>
   );
 }

@@ -16,6 +16,18 @@ test('home page renders without console errors', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('dark mode follows the system and the toggle overrides it across reloads', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+
+  await page.getByRole('button', { name: 'Toggle dark mode' }).click();
+  await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+
+  await page.reload();
+  await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+});
+
 test('unknown pages show the not-found page with a 404', async ({ page }) => {
   const response = await page.goto('/this-page-does-not-exist');
 

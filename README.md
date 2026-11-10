@@ -1,6 +1,6 @@
 # Next.js Starter Kit
 
-A starter for Next.js apps that talk to a separate backend API: TypeScript, Redux Toolkit, Tailwind CSS, a server-side API layer, tests and CI, ready to build on.
+A starter for Next.js apps that talk to a separate backend API: TypeScript, Redux Toolkit, Tailwind CSS with shadcn/ui, a server-side API layer, tests and CI, ready to build on.
 
 ## Features
 
@@ -9,7 +9,7 @@ A starter for Next.js apps that talk to a separate backend API: TypeScript, Redu
 - **Login, logout and protected routes**: login page and server action, `httpOnly` token cookie, `proxy.ts` route protection, return-to-page after login
 - **AES-256-GCM encryption** with purpose labels, expiry and key rotation
 - **Redux Toolkit** with typed hooks and a per-request store
-- **Tailwind CSS 4**
+- **Tailwind CSS 4** and **shadcn/ui** components (Base UI), with dark mode that follows the system and a toggle
 - **Vitest + React Testing Library** for unit and component tests, **Playwright** for end-to-end tests
 - **ESLint** (Next.js, React, accessibility rules), **Prettier**, **Stylelint**, and a **pre-commit hook** that runs them on staged files
 - **GitHub Actions** CI with a dependency audit, and **Dependabot**
@@ -52,13 +52,14 @@ Open [http://localhost:3000](http://localhost:3000). Logging in needs your backe
 ```
 ├── app/                # Routes, login, error and 404 pages, route handlers, robots/sitemap
 ├── views/              # Page UIs (login form; make:module adds more)
+├── components/         # Shared UI; components/ui holds the shadcn components
 ├── services/           # API layer (services/api) and app services: cookies, session
 ├── lib/                # Redux store, hooks, slices, cn()
 ├── utils/              # Helpers; *.server.ts are server-only
 ├── constants/          # Endpoint paths, cookie names, protected routes
-├── types/        # Shared types, exported from types/index.ts
-├── scripts/      # Code generators
-├── e2e/          # Playwright tests
+├── types/              # Shared types, exported from types/index.ts
+├── scripts/            # Code generators
+├── e2e/                # Playwright tests
 ├── docs/               # Documentation
 ├── proxy.ts            # Route protection, runs before every page
 └── instrumentation.ts  # Server error reporting
@@ -74,6 +75,7 @@ Unit tests sit next to the code they test (`helpers.ts` → `helpers.test.ts`).
 | [Environment variables](docs/environment-variables.md) | Every variable, public vs server-only, load order           |
 | [API layer](docs/api-layer.md)                         | Calling the backend, options, errors, caching               |
 | [Authentication](docs/auth-and-cookies.md)             | Login, logout, protected routes, cookies, redirects         |
+| [UI components](docs/ui-components.md)                 | shadcn/ui, adding components, forms, theme, dark mode       |
 | [Encryption](docs/encryption.md)                       | Encrypting data, contexts, expiry, key rotation             |
 | [State management](docs/state-management.md)           | When to use Redux, adding slices                            |
 | [Code generators](docs/code-generators.md)             | `make:module` and `make:type`                               |
