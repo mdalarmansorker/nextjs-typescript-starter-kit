@@ -81,6 +81,8 @@ Unit tests sit next to the code they test (`helpers.ts` → `helpers.test.ts`).
 | [Code quality and CI](docs/code-quality-and-ci.md)     | Linting, formatting, pre-commit hook, CI checks, Dependabot |
 | [Security](docs/security.md)                           | What's built in, what to decide, go-live checklist          |
 
+AI coding agents (Claude Code, Codex, Cursor, Copilot) read [AGENTS.md](AGENTS.md); `CLAUDE.md` imports it.
+
 When you change how something works, update its guide in the same pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## Deployment

@@ -77,10 +77,11 @@ Components are Server Components unless the file starts with `'use client'`. Kee
 
 ## Root files
 
-| File                                        | Purpose                                                                         |
-| ------------------------------------------- | ------------------------------------------------------------------------------- |
-| `proxy.ts`                                  | Runs before every page: protects routes, passes the current path to server code |
-| `instrumentation.ts`                        | Receives every server error; connect your error tracker here                    |
-| `next.config.ts`                            | Security headers. See [security.md](security.md)                                |
-| `vitest.config.mts`, `playwright.config.ts` | Test setup. See [testing.md](testing.md)                                        |
-| `.nvmrc`                                    | Node version                                                                    |
+| File                                        | Purpose                                                                                                                                                                    |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `proxy.ts`                                  | Runs before every page: protects routes, passes the current path to server code                                                                                            |
+| `instrumentation.ts`                        | Receives every server error; connect your error tracker here                                                                                                               |
+| `next.config.ts`                            | Security headers. See [security.md](security.md)                                                                                                                           |
+| `vitest.config.mts`, `playwright.config.ts` | Test setup. See [testing.md](testing.md)                                                                                                                                   |
+| `.nvmrc`                                    | Node version                                                                                                                                                               |
+| `AGENTS.md`, `CLAUDE.md`                    | Instructions for AI coding agents. `CLAUDE.md` imports `AGENTS.md`; keep the rules in `AGENTS.md`. `next dev` maintains the block between the `nextjs-agent-rules` markers |
