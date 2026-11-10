@@ -6,6 +6,10 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 
 ### Added
 
+- Example CRUD module at `/projects` (list with pagination, create and edit forms with zod and API validation errors, delete, 404), with unit and e2e tests and mock API endpoints. See `docs/example-module.md`.
+- `parsePage` (`services/api/pagination.ts`): reads paginated lists from Laravel, Django REST Framework and other common shapes into one `Page<T>`. `components/Pagination.tsx` renders previous / next links.
+- `responseType: 'text' | 'blob'` on `handleRequest` for text and file downloads. A caller's `Accept` header is no longer overwritten.
+
 - Login page and server action, `httpOnly` session cookie, and route protection in `proxy.ts` (`constants/routes.ts`). An example protected page at `/dashboard`.
 - After an expired session, users return to the page they were on once they log in again.
 - `parse` option on `handleRequest` to check API responses at runtime; zod is included.

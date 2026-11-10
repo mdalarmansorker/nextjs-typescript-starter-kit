@@ -41,6 +41,12 @@ describe('apiInterceptor', () => {
     expect(sentHeaders().has('Authorization')).toBe(false);
   });
 
+  it('keeps an Accept header set by the caller, e.g. for a download', async () => {
+    await apiInterceptor('https://api.test/report', { headers: { Accept: 'application/pdf' } });
+
+    expect(sentHeaders().get('Accept')).toBe('application/pdf');
+  });
+
   it('declares a JSON body, but not a missing one', async () => {
     await apiInterceptor('https://api.test/items', { method: 'POST', body: '{}' });
     await apiInterceptor('https://api.test/items');

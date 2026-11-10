@@ -11,3 +11,4 @@ export const API_TIMEOUT_MS = 10_000;
  * `npm run make:module` adds the export for you.
  */
 export * from './auth.api';
+export * from './projects.api';
