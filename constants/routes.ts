@@ -1,6 +1,9 @@
 /** Where logged-out users are sent, with `?redirect=` set to the page they wanted. */
 export const LOGIN_ROUTE = '/login';
 
+/** Route handler that refreshes the access token and redirects back (`?redirect=`). */
+export const REFRESH_ROUTE = '/api/auth/refresh';
+
 /** Where users go after logging in when there's no page to return to. */
 export const AFTER_LOGIN_ROUTE = '/dashboard';
 

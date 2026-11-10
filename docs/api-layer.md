@@ -32,7 +32,7 @@ export async function createProject(_previous: FormState, formData: FormData): P
     await ProjectService.store({ name: String(formData.get('name')) });
   } catch (error) {
     if (error instanceof ApiError && error.status < 500) {
-      return { message: error.message, fieldErrors: error.errors as FormState['fieldErrors'] };
+      return { message: error.message, fieldErrors: error.fieldErrors };
     }
     throw error;
   }
@@ -107,15 +107,26 @@ Encode values you put in a path: `` `${PROJECTS}/${encodeURIComponent(id)}` ``.
 
 `handleRequest<T>(slug, options)` accepts everything `fetch` does, plus:
 
-| Option           | Default                 | Effect                                                                                      |
-| ---------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
-| `requiresAuth`   | `false`                 | Sends `Authorization: Bearer <token>`. Fails with 401 if there is no token                  |
-| `parse`          | none                    | Checks the response and returns it typed; a wrong shape throws a 502 `ApiError`             |
-| `timeoutMs`      | `API_TIMEOUT_MS` (10 s) | Cancels the request after this long; throws a 504 `ApiError`                                |
-| `revalidateTags` | none                    | Clears these cache tags after a successful response. Server actions and route handlers only |
-| `cachedRead`     | `false`                 | Set on reads inside `use cache: private`, where `connection()` isn't allowed                |
+| Option            | Default                 | Effect                                                                                      |
+| ----------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
+| `requiresAuth`    | `false`                 | Sends `Authorization: Bearer <token>`. Fails with 401 if there is no token                  |
+| `query`           | none                    | Query parameters, encoded. `null`/`undefined` are left out; arrays repeat the key           |
+| `endSessionOn401` | `true`                  | On a 401 for a `requiresAuth` request, end the session. `false` throws the `ApiError`       |
+| `parse`           | none                    | Checks the response and returns it typed; a wrong shape throws a 502 `ApiError`             |
+| `timeoutMs`       | `API_TIMEOUT_MS` (10 s) | Cancels the request after this long; throws a 504 `ApiError`                                |
+| `revalidateTags`  | none                    | Clears these cache tags after a successful response. Server actions and route handlers only |
+| `cachedRead`      | `false`                 | Set on reads inside `use cache: private`, where `connection()` isn't allowed                |
 
 `slug` is appended to `API_URL` and must start with `/`. A slug that would leave `API_URL` (`/../admin`, `@other-host`) is refused with a 400, because slugs often contain user input.
+
+Pass query parameters with `query` instead of building the string yourself, so values are encoded:
+
+```ts
+handleRequest('/projects', { requiresAuth: true, query: { page: 2, search, status: ['active', 'paused'] } });
+// → /projects?page=2&search=…&status=active&status=paused
+```
+
+For APIs that expect PHP-style arrays (`status[]=active`), name the key `'status[]'`.
 
 `Accept: application/json` is always sent, and `Content-Type: application/json` when there is a body that isn't `FormData`.
 
@@ -127,14 +138,20 @@ Without `parse`, the response is only cast to `T`: if the API changes shape, the
 
 `handleRequest` throws `ApiError` (a subclass of `Error`) for every failure:
 
-| Situation                          | `status`                                           | `message`                                  | `errors`           |
-| ---------------------------------- | -------------------------------------------------- | ------------------------------------------ | ------------------ |
-| The API answered with 4xx / 5xx    | The API's status                                   | The API's `message`                        | The API's `errors` |
-| 401 on a `requiresAuth` request    | Ends the session and redirects to login (no throw) |                                            |                    |
-| Response doesn't match `parse`     | 502                                                | "The API returned an unexpected response." |                    |
-| Timeout                            | 504                                                | "The API did not respond in time."         |                    |
-| Network failure, `API_URL` missing | 500                                                | The underlying error                       |                    |
-| Slug leaves `API_URL`              | 400                                                | "Invalid API path …"                       |                    |
+| Situation                          | `status`                                           | `message`                                  | `errors`         |
+| ---------------------------------- | -------------------------------------------------- | ------------------------------------------ | ---------------- |
+| The API answered with 4xx / 5xx    | The API's status                                   | The API's message (see below)              | The API's errors |
+| 401 on a `requiresAuth` request    | Ends the session and redirects to login (no throw) |                                            |                  |
+| Response doesn't match `parse`     | 502                                                | "The API returned an unexpected response." |                  |
+| Timeout                            | 504                                                | "The API did not respond in time."         |                  |
+| Network failure, `API_URL` missing | 500                                                | The underlying error                       |                  |
+| Slug leaves `API_URL`              | 400                                                | "Invalid API path …"                       |                  |
+
+### Error bodies from different APIs
+
+Backends shape error bodies differently. `readApiError` in `services/api/api-errors.ts` reads the message and field errors from the common shapes: `{ message, errors }` (Laravel, NestJS), `{ error: '…' }` (Express, Rails), `{ error: { message, details } }`, `{ detail }` (Django REST Framework, FastAPI) and RFC 9457 problem details (`{ title, detail, errors }`). If your API uses another shape, change that one function.
+
+`ApiError.errors` holds the field errors as the API sent them. `ApiError.fieldErrors` holds them as `{ field: ['message'] }`, ready for a form, whether the API sent an object of messages (`{ email: ['Taken'] }`) or a list of entries naming the field (FastAPI's `loc`, zod's `path`, `field`, `param`, JSON:API's `source.pointer`). It's `undefined` when there are none.
 
 **Show 4xx messages to the user; log 5xx.** A 4xx `message` comes from your API and is meant for users ("These credentials do not match our records."). A 5xx message can contain internal details (`connect ECONNREFUSED 10.0.0.5`).
 
@@ -144,7 +161,7 @@ Without `parse`, the response is only cast to `T`: if the API changes shape, the
 
 ### Expired sessions
 
-On a 401 for a `requiresAuth` request, `handleRequest` redirects to `/api/auth/clear?redirect=<current page>`, which deletes the auth cookies and sends the user to `/login`. After logging in they return to the page they were on. The current page comes from the `x-current-path` header that `proxy.ts` sets.
+On a 401 for a `requiresAuth` request, `handleRequest` first tries to refresh the token when a refresh token is stored: in a server action or route handler it refreshes and retries the request once; while a Server Component renders it redirects to `/api/auth/refresh`, which refreshes and comes back. See [Token refresh](auth-and-cookies.md#token-refresh). Without a refresh token, or when the refresh is rejected, it ends the session: in a server action or route handler it deletes the auth cookies itself and redirects to `/login?redirect=<current page>`; while a Server Component renders it redirects to `/api/auth/clear?redirect=<current page>`, which deletes them and sends the user to `/login`. After logging in they return to the page they were on. The current page comes from the `x-current-path` header that `proxy.ts` sets.
 
 Redirects are thrown by Next.js, so rethrow them if you wrap server code in `try/catch`. `unstable_rethrow` from `next/navigation` does this, or call `redirect` outside the `try`.
 

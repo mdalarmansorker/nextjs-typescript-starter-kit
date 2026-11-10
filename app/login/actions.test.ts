@@ -34,17 +34,17 @@ beforeEach(() => {
 
 describe('login', () => {
   it('saves the token and goes to the dashboard', async () => {
-    vi.mocked(AuthService.login).mockResolvedValue({ token: 'abc' });
+    vi.mocked(AuthService.login).mockResolvedValue({ accessToken: 'abc' });
 
     await expect(login({}, form(valid))).rejects.toThrow('NEXT_REDIRECT');
 
     expect(AuthService.login).toHaveBeenCalledWith(valid);
-    expect(saveSession).toHaveBeenCalledWith('abc');
+    expect(saveSession).toHaveBeenCalledWith({ accessToken: 'abc' });
     expect(redirect).toHaveBeenCalledWith('/dashboard');
   });
 
   it('returns to the page in the redirect field', async () => {
-    vi.mocked(AuthService.login).mockResolvedValue({ token: 'abc' });
+    vi.mocked(AuthService.login).mockResolvedValue({ accessToken: 'abc' });
 
     await expect(login({}, form({ ...valid, redirect: encodeRedirectPath('/reports?y=1')! }))).rejects.toThrow();
 
@@ -52,7 +52,7 @@ describe('login', () => {
   });
 
   it('ignores a redirect to another site', async () => {
-    vi.mocked(AuthService.login).mockResolvedValue({ token: 'abc' });
+    vi.mocked(AuthService.login).mockResolvedValue({ accessToken: 'abc' });
     const crafted = Buffer.from('https://evil.example').toString('base64url');
 
     await expect(login({}, form({ ...valid, redirect: crafted }))).rejects.toThrow();

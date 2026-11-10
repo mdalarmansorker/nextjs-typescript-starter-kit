@@ -60,27 +60,28 @@ Components are Server Components unless the file starts with `'use client'`. Kee
 
 ## App files
 
-| File                          | Purpose                                                                                   |
-| ----------------------------- | ----------------------------------------------------------------------------------------- |
-| `app/layout.tsx`              | Root layout: fonts, metadata (title template from `NEXT_PUBLIC_APP_NAME`), Redux provider |
-| `app/page.tsx`                | Home page. Replace it                                                                     |
-| `app/login/`                  | Login page and its server action. See [auth-and-cookies.md](auth-and-cookies.md)          |
-| `app/dashboard/page.tsx`      | Example page behind login. Replace it                                                     |
-| `app/error.tsx`               | Shown when a page throws: a reference ID and "Try again"                                  |
-| `app/global-error.tsx`        | Shown when the root layout itself throws; replaces the whole page                         |
-| `app/not-found.tsx`           | 404 page for unknown URLs and `notFound()`                                                |
-| `app/api/auth/clear/route.ts` | Ends a session (logout and expired tokens)                                                |
-| `app/robots.ts`               | `/robots.txt`: keeps crawlers out of `/api/` and protected pages                          |
-| `app/sitemap.ts`              | `/sitemap.xml`: add your public pages                                                     |
-| `app/opengraph-image.tsx`     | Preview image for shared links. Replace it with your design                               |
-| `app/globals.css`             | Tailwind import and the theme's color and font variables                                  |
+| File                            | Purpose                                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| `app/layout.tsx`                | Root layout: fonts, metadata (title template from `NEXT_PUBLIC_APP_NAME`), Redux provider |
+| `app/page.tsx`                  | Home page. Replace it                                                                     |
+| `app/login/`                    | Login page and its server action. See [auth-and-cookies.md](auth-and-cookies.md)          |
+| `app/dashboard/page.tsx`        | Example page behind login. Replace it                                                     |
+| `app/error.tsx`                 | Shown when a page throws: a reference ID and "Try again"                                  |
+| `app/global-error.tsx`          | Shown when the root layout itself throws; replaces the whole page                         |
+| `app/not-found.tsx`             | 404 page for unknown URLs and `notFound()`                                                |
+| `app/api/auth/clear/route.ts`   | Ends a session (logout and expired tokens)                                                |
+| `app/api/auth/refresh/route.ts` | Refreshes the access token, then returns to the page                                      |
+| `app/robots.ts`                 | `/robots.txt`: keeps crawlers out of `/api/` and protected pages                          |
+| `app/sitemap.ts`                | `/sitemap.xml`: add your public pages                                                     |
+| `app/opengraph-image.tsx`       | Preview image for shared links. Replace it with your design                               |
+| `app/globals.css`               | Tailwind import and the theme's color and font variables                                  |
 
 ## Root files
 
 | File                                        | Purpose                                                                                                                                                                    |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `proxy.ts`                                  | Runs before every page: protects routes, passes the current path to server code                                                                                            |
-| `instrumentation.ts`                        | Receives every server error; connect your error tracker here                                                                                                               |
+| `instrumentation.ts`                        | Checks environment variables at startup and receives every server error; connect your error tracker here                                                                   |
 | `next.config.ts`                            | Security headers. See [security.md](security.md)                                                                                                                           |
 | `vitest.config.mts`, `playwright.config.ts` | Test setup. See [testing.md](testing.md)                                                                                                                                   |
 | `.nvmrc`                                    | Node version                                                                                                                                                               |

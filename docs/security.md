@@ -20,7 +20,7 @@ What the kit already does, and what you need to decide for your deployment.
 ### Secrets stay on the server
 
 - `API_URL`, the access token and `ENCRYPTION_KEY` are read on the server only. The API layer imports `server-only`, so the build fails if a client component imports it.
-- The access token is stored in an `httpOnly` cookie, so page scripts (including injected ones) can't read it.
+- The access and refresh tokens are stored in `httpOnly` cookies, so page scripts (including injected ones) can't read them. Logout asks the API to revoke both.
 - The API layer is not a server action, so visitors can't call it with their own arguments. Client components reach the API only through server actions you write, which validate their input (see `app/login/actions.ts`).
 
 ### API requests stay inside API_URL
@@ -82,7 +82,7 @@ Login attempts should be limited per account and per IP address. Do this in the 
 
 - [ ] `ENCRYPTION_KEY` is set and is not the one from development
 - [ ] `TRUSTED_CLIENT_IP_HEADER` is set only if your proxy overwrites that header
-- [ ] `LoginResponseSchema` matches your API, and every protected section is in `PROTECTED_ROUTES`
+- [ ] `TokenResponseSchema` matches your login and refresh responses, and every protected section is in `PROTECTED_ROUTES`
 - [ ] Every API endpoint checks the token and the user's permissions itself
 - [ ] The API rate-limits login attempts
 - [ ] HSTS is on (from your host or `next.config.ts`)

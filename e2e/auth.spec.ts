@@ -63,9 +63,11 @@ test.describe('logging in', () => {
 });
 
 test.describe('logging out', () => {
-  test('the logout button clears the session', async ({ page, context, baseURL }) => {
+  test('the logout button revokes the token and clears the session', async ({ page, context, baseURL, request }) => {
+    const token = `logout-${Date.now()}`;
+
     await context.addCookies([
-      ...Object.values(COOKIE_NAMES).map(name => ({ name, value: 'stale', url: baseURL! })),
+      ...Object.values(COOKIE_NAMES).map(name => ({ name, value: token, url: baseURL! })),
       { name: 'unrelated', value: 'kept', url: baseURL! },
     ]);
 
@@ -74,6 +76,7 @@ test.describe('logging out', () => {
 
     await expect(page).toHaveURL('/');
     expect((await context.cookies()).map(cookie => cookie.name)).toEqual(['unrelated']);
+    expect(await (await request.get('http://127.0.0.1:4010/revoked-tokens')).json()).toContain(token);
 
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login/);
@@ -97,5 +100,67 @@ test.describe('logging out', () => {
     expect(response.status()).toBe(307);
     expect(response.headers()['set-cookie'] ?? '').not.toContain(COOKIE_NAMES.ACCESS_TOKEN);
     expect(baseURL).toBeTruthy();
+  });
+});
+
+test.describe('token refresh', () => {
+  const cookie = (context: import('@playwright/test').BrowserContext, name: string) =>
+    context.cookies().then(cookies => cookies.find(c => c.name === name));
+
+  test('an expired access token is refreshed before the page renders', async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: COOKIE_NAMES.REFRESH_TOKEN, value: 'valid-refresh', url: baseURL! }]);
+
+    await page.goto('/dashboard?tab=reports');
+
+    await expect(page).toHaveURL('/dashboard?tab=reports');
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    expect(await cookie(context, COOKIE_NAMES.ACCESS_TOKEN)).toMatchObject({
+      value: 'refreshed-access',
+      httpOnly: true,
+    });
+    expect(await cookie(context, COOKIE_NAMES.REFRESH_TOKEN)).toMatchObject({ value: 'valid-refresh-rotated' });
+  });
+
+  test('a rejected refresh token ends the session, keeping the page to return to', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await context.addCookies([{ name: COOKIE_NAMES.REFRESH_TOKEN, value: 'revoked', url: baseURL! }]);
+
+    await page.goto('/dashboard');
+
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    expect(await cookie(context, COOKIE_NAMES.REFRESH_TOKEN)).toBeUndefined();
+  });
+
+  test('a client-side navigation after the access cookie expired refreshes too', async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      { name: COOKIE_NAMES.ACCESS_TOKEN, value: 'old', url: baseURL! },
+      { name: COOKIE_NAMES.REFRESH_TOKEN, value: 'valid-refresh-link', url: baseURL! },
+    ]);
+    await page.goto('/');
+    await context.clearCookies({ name: COOKIE_NAMES.ACCESS_TOKEN });
+
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+
+    await expect(page).toHaveURL('/dashboard');
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    expect(await cookie(context, COOKIE_NAMES.ACCESS_TOKEN)).toMatchObject({ value: 'refreshed-access' });
+  });
+
+  test('a client-side navigation with a rejected refresh token ends on login', async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      { name: COOKIE_NAMES.ACCESS_TOKEN, value: 'old', url: baseURL! },
+      { name: COOKIE_NAMES.REFRESH_TOKEN, value: 'revoked', url: baseURL! },
+    ]);
+    await page.goto('/');
+    await context.clearCookies({ name: COOKIE_NAMES.ACCESS_TOKEN });
+
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    await expect(page.getByLabel('Email')).toBeVisible();
+    expect(await cookie(context, COOKIE_NAMES.REFRESH_TOKEN)).toBeUndefined();
   });
 });

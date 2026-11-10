@@ -1,16 +1,24 @@
 import { NextRequest } from 'next/server';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import AuthService from '@/services/api/auth.service';
 
 import { COOKIE_NAMES } from '@/constants/cookie';
 
 import { GET, POST } from './route';
 
-const request = (path: string, init: { method?: string; site?: string } = {}) =>
-  new NextRequest(new URL(path, 'https://app.example.com'), {
-    method: init.method ?? 'GET',
-    headers: init.site ? { 'sec-fetch-site': init.site } : {},
-  });
+vi.mock('@/services/api/auth.service', () => ({ default: { logout: vi.fn() } }));
+vi.mock('@/services/app/session.service', () => ({ getRefreshToken: vi.fn(async () => 'refresh') }));
+
+const request = (path: string, init: { method?: string; site?: string; token?: string } = {}) => {
+  const headers = new Headers();
+
+  if (init.site) headers.set('sec-fetch-site', init.site);
+  if (init.token) headers.set('cookie', `${COOKIE_NAMES.ACCESS_TOKEN}=${init.token}`);
+
+  return new NextRequest(new URL(path, 'https://app.example.com'), { method: init.method ?? 'GET', headers });
+};
 
 const deletedCookies = (res: Response & { cookies: { getAll(): { name: string; value: string }[] } }) =>
   res.cookies
@@ -40,6 +48,14 @@ describe('/api/auth/clear', () => {
     expect(new URL(res.headers.get('location')!).origin).toBe('https://app.example.com');
   });
 
+  it('answers a client-side navigation with a full page load instead of redirecting', () => {
+    const res = GET(new NextRequest('https://app.example.com/api/auth/clear?_rsc=abc', { headers: { rsc: '1' } }));
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get('location')).toBeNull();
+    expect(deletedCookies(res)).toEqual([]);
+  });
+
   it.each([undefined, 'same-origin', 'none'])('deletes every auth cookie (Sec-Fetch-Site: %s)', site => {
     const res = GET(request('/api/auth/clear', { site }));
 
@@ -53,16 +69,40 @@ describe('/api/auth/clear', () => {
     expect(deletedCookies(res)).toEqual([]);
   });
 
-  it('logs out from a form POST with a 303', () => {
-    const res = POST(request('/api/auth/clear', { method: 'POST', site: 'same-origin' }));
+  it('logs out from a form POST with a 303', async () => {
+    const res = await POST(request('/api/auth/clear', { method: 'POST', site: 'same-origin' }));
 
     expect(res.status).toBe(303);
     expect(deletedCookies(res)).toEqual(Object.values(COOKIE_NAMES));
   });
 
-  it('ignores a form POST from another site', () => {
-    const res = POST(request('/api/auth/clear', { method: 'POST', site: 'cross-site' }));
+  it('revokes the token on the API before deleting the cookies', async () => {
+    const res = await POST(request('/api/auth/clear', { method: 'POST', site: 'same-origin', token: 'abc' }));
 
+    expect(AuthService.logout).toHaveBeenCalledWith('refresh');
+    expect(deletedCookies(res)).toEqual(Object.values(COOKIE_NAMES));
+  });
+
+  it('skips the API when there is no token', async () => {
+    await POST(request('/api/auth/clear', { method: 'POST', site: 'same-origin' }));
+
+    expect(AuthService.logout).not.toHaveBeenCalled();
+  });
+
+  it('still logs out when the API call fails', async () => {
+    vi.mocked(AuthService.logout).mockRejectedValue(new Error('API down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await POST(request('/api/auth/clear', { method: 'POST', site: 'same-origin', token: 'abc' }));
+
+    expect(res.status).toBe(303);
+    expect(deletedCookies(res)).toEqual(Object.values(COOKIE_NAMES));
+  });
+
+  it('ignores a form POST from another site', async () => {
+    const res = await POST(request('/api/auth/clear', { method: 'POST', site: 'cross-site', token: 'abc' }));
+
+    expect(AuthService.logout).not.toHaveBeenCalled();
     expect(deletedCookies(res)).toEqual([]);
   });
 });

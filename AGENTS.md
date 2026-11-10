@@ -2,7 +2,7 @@
 
 Instructions for AI coding agents working in this repository. Humans: see [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-This is a Next.js starter kit for apps that talk to a separate backend API (often Laravel). Next.js 16 App Router, React 19, TypeScript (strict), Tailwind CSS 4, Redux Toolkit, zod.
+This is a Next.js starter kit for apps that talk to a separate REST API (any backend: Laravel, Django, FastAPI, Express, Rails…). Next.js 16 App Router, React 19, TypeScript (strict), Tailwind CSS 4, Redux Toolkit, zod.
 
 ## Commands
 
@@ -46,13 +46,17 @@ Scaffold a new feature with `npm run make:module <name>` (page, view, service, t
 - Every backend call goes through `handleRequest` in `services/api/base.service.ts`. Never `fetch` the API directly.
 - The API layer imports `server-only`. Read data in Server Components; change data in server actions. Don't use server actions for reads, and never import `services/api` into a client component.
 - Pass `parse` with a zod schema so responses are checked at runtime.
-- `handleRequest` throws `ApiError` (`status`, `message`, `errors`). In server actions, catch it and **return** `{ message, fieldErrors }` for 4xx; rethrow or log 5xx. Messages of errors thrown from server actions are hidden in production.
+- Pass query parameters with the `query` option, not by building the query string.
+- API error bodies are read by `readApiError` in `services/api/api-errors.ts`; adapt it there, not per call. Forms use `ApiError.fieldErrors` (`{ field: ['message'] }`).
+- `handleRequest` throws `ApiError` (`status`, `message`, `errors`, `fieldErrors`). In server actions, catch it and **return** `{ message, fieldErrors }` for 4xx; rethrow or log 5xx. Messages of errors thrown from server actions are hidden in production.
 - Encode user input in paths: `` `${PROJECTS}/${encodeURIComponent(id)}` ``.
 - `redirect()` and `notFound()` work by throwing. Call them outside `try`, or use `unstable_rethrow`.
 
 ### Auth and security
 
 - Add protected sections to `PROTECTED_ROUTES` in `constants/routes.ts`. The proxy only checks that a token cookie exists; the API must still authorize every request.
+- Add new environment variables to `.env.example`, `EnvSchema` in `utils/validate-env.ts` and `docs/environment-variables.md`.
+- Store tokens with `saveSession({ accessToken, refreshToken?, expiresIn? })`. Token responses are parsed by `TokenResponseSchema` (`services/api/auth-tokens.ts`); token refresh is automatic, see `docs/auth-and-cookies.md`.
 - Add auth cookies to `COOKIE_NAMES` in `constants/cookie.ts` so logout deletes them.
 - Redirect targets from URLs or forms must pass `isSafeRedirectPath` (`utils/redirect-path.ts`).
 - Never expose `API_URL`, tokens or `ENCRYPTION_KEY` to the browser. Only `NEXT_PUBLIC_*` variables reach client code.

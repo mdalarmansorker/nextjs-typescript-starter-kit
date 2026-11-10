@@ -63,4 +63,30 @@ describe('proxy', () => {
 
     expect(forwardedHeader(res, 'x-current-path')).toBe('/projects?page=2');
   });
+
+  describe('token refresh', () => {
+    const withRefreshToken = (path: string, method = 'GET') =>
+      new NextRequest(new URL(path, 'https://app.example.com'), { method, headers: { cookie: '__rt=refresh' } });
+
+    it('refreshes an expired access token before the page renders, then comes back', () => {
+      const res = proxy(withRefreshToken('/dashboard?tab=2'));
+
+      expect(location(res).pathname).toBe('/api/auth/refresh');
+      expect(decodeRedirectPath(location(res).searchParams.get('redirect'))).toBe('/dashboard?tab=2');
+    });
+
+    it('leaves server actions to refresh in handleRequest', () => {
+      expect(proxy(withRefreshToken('/dashboard', 'POST')).headers.get('location')).toBeNull();
+    });
+
+    it('does not refresh while the access token is still there', () => {
+      const res = proxy(
+        new NextRequest(new URL('/dashboard', 'https://app.example.com'), {
+          headers: { cookie: '__at=token; __rt=refresh' },
+        }),
+      );
+
+      expect(res.headers.get('location')).toBeNull();
+    });
+  });
 });
