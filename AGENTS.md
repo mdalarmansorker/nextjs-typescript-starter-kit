@@ -2,7 +2,7 @@
 
 Instructions for AI coding agents working in this repository. Humans: see [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-This is a Next.js starter kit for apps that talk to a separate backend API (often Laravel). Next.js 16 App Router, React 19, TypeScript (strict), Tailwind CSS 4, Redux Toolkit, zod.
+This is a Next.js starter kit for apps that talk to a separate backend API (often Laravel). Next.js 16 App Router, React 19, TypeScript (strict), Tailwind CSS 4 with shadcn/ui (Base UI), Redux Toolkit, zod.
 
 ## Commands
 
@@ -27,6 +27,8 @@ Before saying a change is done, run lint, format check, typecheck and `test:run`
 | Path               | Holds                                                                     |
 | ------------------ | ------------------------------------------------------------------------- |
 | `app/`             | Routes only. `page.tsx` stays thin and renders a view                     |
+| `components/ui/`   | shadcn components, added with the shadcn CLI                              |
+| `components/`      | Shared UI used by several views                                           |
 | `views/<feature>/` | The UI of a page                                                          |
 | `services/api/`    | Server-only API layer: `handleRequest` and one service class per resource |
 | `services/app/`    | Cookies (`CookieService`) and the login session                           |
@@ -56,6 +58,16 @@ Scaffold a new feature with `npm run make:module <name>` (page, view, service, t
 - Add auth cookies to `COOKIE_NAMES` in `constants/cookie.ts` so logout deletes them.
 - Redirect targets from URLs or forms must pass `isSafeRedirectPath` (`utils/redirect-path.ts`).
 - Never expose `API_URL`, tokens or `ENCRYPTION_KEY` to the browser. Only `NEXT_PUBLIC_*` variables reach client code.
+
+### UI
+
+- Use the shadcn components in `components/ui/` before writing your own. Add missing ones with `npx shadcn@latest add <name>`, not by hand, then run `npm run lint:fix && npm run format`. `docs/ui-components.md` has the details.
+- The components are built on Base UI (`@base-ui/react`), not Radix. Examples written for Radix (`asChild`, `@radix-ui/*` imports) don't apply.
+- Style a `Link` as a button with `buttonVariants()`, so it stays a link.
+- Use theme color classes (`bg-background`, `text-muted-foreground`, `text-destructive`, `border-border`), not fixed palette colors like `text-zinc-600`, so light and dark mode both work.
+- Dark mode is the `dark` class set by `next-themes`. In client components read it with `useTheme().resolvedTheme`.
+- Merge class names with `cn()` from `@/lib/utils`.
+- Forms: `Field`, `FieldLabel`, `Input`, `FieldError`, wired with `htmlFor`, `aria-invalid` and `aria-describedby`, as in `views/login/LoginForm.tsx`.
 
 ### Code style
 
