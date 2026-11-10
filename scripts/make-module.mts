@@ -63,7 +63,9 @@ writeFile(
 
 writeFile(
   paths.service,
-  `import type { ${pascal} } from '@/types';
+  `import 'server-only';
+
+import type { ${pascal} } from '@/types';
 
 import { ${constantPlural} } from '@/constants/api';
 
@@ -71,23 +73,28 @@ import { handleRequest } from './base.service';
 
 type ${pascal}Payload = Omit<${pascal}, 'id'>;
 
+/**
+ * Server-only: call it from Server Components to read, and from server actions to write.
+ * Add \`parse\` to check responses at runtime (see docs/api-layer.md).
+ */
 export default class ${pascal}Service {
   static index = () => handleRequest<${pascal}[]>(${constantPlural}, { requiresAuth: true });
 
-  static show = (id: string) => handleRequest<${pascal}>(\`\${${constantPlural}}/\${id}\`, { requiresAuth: true });
+  static show = (id: string) =>
+    handleRequest<${pascal}>(\`\${${constantPlural}}/\${encodeURIComponent(id)}\`, { requiresAuth: true });
 
   static store = (payload: ${pascal}Payload) =>
-    handleRequest<${pascal}>(${constantPlural}, { requiresAuth: true, method: 'POST', body: JSON.stringify(payload) }, 'raw');
+    handleRequest<${pascal}>(${constantPlural}, { requiresAuth: true, method: 'POST', body: JSON.stringify(payload) });
 
   static update = (id: string, payload: Partial<${pascal}Payload>) =>
-    handleRequest<${pascal}>(
-      \`\${${constantPlural}}/\${id}\`,
-      { requiresAuth: true, method: 'PUT', body: JSON.stringify(payload) },
-      'raw',
-    );
+    handleRequest<${pascal}>(\`\${${constantPlural}}/\${encodeURIComponent(id)}\`, {
+      requiresAuth: true,
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
 
   static destroy = (id: string) =>
-    handleRequest<void>(\`\${${constantPlural}}/\${id}\`, { requiresAuth: true, method: 'DELETE' });
+    handleRequest<void>(\`\${${constantPlural}}/\${encodeURIComponent(id)}\`, { requiresAuth: true, method: 'DELETE' });
 }
 `,
 );

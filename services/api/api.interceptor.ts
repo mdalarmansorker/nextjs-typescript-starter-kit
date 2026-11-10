@@ -1,17 +1,22 @@
+import 'server-only';
+
 import { connection } from 'next/server';
 
 import { getClientIp } from '@/utils/client-ip.server';
 
+import { API_TIMEOUT_MS } from '@/constants/api';
 import { COOKIE_NAMES } from '@/constants/cookie';
 
 import CookieService from '../app/cookie.service';
 
 import { ApiError } from './api-errors';
 
-interface ApiInterceptorOptions extends RequestInit {
+export interface ApiInterceptorOptions extends RequestInit {
   requiresAuth?: boolean;
   /** Set on reads that run inside `use cache: private`, where `connection()` is not allowed. */
   cachedRead?: boolean;
+  /** Cancel the request after this many milliseconds. Defaults to `API_TIMEOUT_MS`. */
+  timeoutMs?: number;
 }
 
 /**
@@ -21,7 +26,7 @@ interface ApiInterceptorOptions extends RequestInit {
  * is available, or when the API responds with 401.
  */
 const apiInterceptor = async (url: string, options: ApiInterceptorOptions = {}): Promise<Response> => {
-  const { requiresAuth = false, cachedRead = false, ...fetchOptions } = options;
+  const { requiresAuth = false, cachedRead = false, timeoutMs = API_TIMEOUT_MS, signal, ...fetchOptions } = options;
 
   // Read tokens
   const accessToken = requiresAuth ? ((await CookieService.get(COOKIE_NAMES.ACCESS_TOKEN)) ?? null) : null;
@@ -36,7 +41,7 @@ const apiInterceptor = async (url: string, options: ApiInterceptorOptions = {}):
 
   headers.set('Accept', 'application/json');
 
-  if (!(fetchOptions.body && fetchOptions.body instanceof FormData)) {
+  if (fetchOptions.body && !(fetchOptions.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -59,9 +64,13 @@ const apiInterceptor = async (url: string, options: ApiInterceptorOptions = {}):
     await connection();
   }
 
+  // A hanging API must not hang the page: give up after timeoutMs (and still honour the caller's signal).
+  const timeout = AbortSignal.timeout(timeoutMs);
+
   const response = await fetch(url, {
     ...fetchOptions,
     headers,
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
 
   // Convert authenticated 401 responses into an authentication error.

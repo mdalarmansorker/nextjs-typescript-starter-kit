@@ -1,64 +1,32 @@
 import js from '@eslint/js';
-import nextPlugin from '@next/eslint-plugin-next';
-import tseslint from 'typescript-eslint';
-import reactHooks from 'eslint-plugin-react-hooks';
-import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTypescript from 'eslint-config-next/typescript';
 import prettierConfig from 'eslint-config-prettier';
+import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort';
 
-export default [
-  // Ignores
-  {
-    ignores: [
-      '.next/**',
-      'node_modules/**',
-      'out/**',
-      'coverage/**',
-      'test-results/**',
-      'playwright-report/**',
-      'next-env.d.ts',
-      'eslint.config.mjs',
-    ],
-  },
+export default defineConfig([
+  globalIgnores([
+    '.next/**',
+    'node_modules/**',
+    'out/**',
+    'build/**',
+    'coverage/**',
+    'test-results/**',
+    'playwright-report/**',
+    'next-env.d.ts',
+  ]),
 
-  // Base rules
   js.configs.recommended,
-  ...tseslint.configs.recommended,
 
-  // React & Next.js
-  {
-    files: ['**/*.{js,jsx,mjs,ts,tsx}'],
-
-    plugins: {
-      'react-hooks': reactHooks,
-      '@next/next': nextPlugin,
-    },
-
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
-    },
-
-    rules: {
-      // React
-      ...reactHooks.configs.recommended.rules,
-      'react-hooks/exhaustive-deps': 'off',
-
-      // Next.js
-      ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs['core-web-vitals'].rules,
-      '@next/next/no-img-element': 'off',
-      '@next/next/no-page-custom-font': 'off',
-    },
-  },
+  // Next.js: React, React Hooks, accessibility (jsx-a11y), imports and Core Web Vitals rules, plus
+  // typescript-eslint's recommended rules.
+  ...nextVitals,
+  ...nextTypescript,
 
   // TypeScript
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx,mts}'],
     rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
@@ -70,18 +38,8 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
-      'no-empty': [
-        'error',
-        {
-          allowEmptyCatch: true,
-        },
-      ],
-      '@typescript-eslint/no-empty-object-type': [
-        'error',
-        {
-          allowInterfaces: 'with-single-extends',
-        },
-      ],
+      'no-empty': ['error', { allowEmptyCatch: true }],
+      '@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'with-single-extends' }],
     },
   },
 
@@ -101,15 +59,14 @@ export default [
     },
   },
 
-  // Import sorting
+  // Import sorting (replaces eslint-plugin-import's `import/order`)
   {
-    files: ['**/*.{ts,tsx,js,jsx,mjs}'],
-
+    files: ['**/*.{ts,tsx,mts,js,jsx,mjs}'],
     plugins: {
       'simple-import-sort': simpleImportSortPlugin,
     },
-
     rules: {
+      'import/order': 'off',
       'simple-import-sort/imports': [
         'error',
         {
@@ -144,11 +101,10 @@ export default [
           ],
         },
       ],
-
       'simple-import-sort/exports': 'error',
     },
   },
 
-  // Prettier
+  // Prettier last, so ESLint never fights it over formatting.
   prettierConfig,
-];
+]);

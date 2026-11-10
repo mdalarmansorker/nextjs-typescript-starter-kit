@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "stylelint": "stylelint \"**/*.{css,scss,js,jsx,ts,tsx}\"",
     "stylelint:fix": "stylelint \"**/*.{css,scss,js,jsx,ts,tsx}\" --fix",
@@ -18,30 +18,29 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.14.0",
     "clsx": "^2.1.1",
-    "crypto-js": "^4.2.0",
     "js-cookie": "^3.0.8",
     "lucide-react": "^1.70.0",
     "next": "^16.4.5",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-redux": "^9.3.1",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@next/eslint-plugin-next": "^16.4.5",
     "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.9",
-    "@types/crypto-js": "^4.2.2",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^26.6.6",
     "@types/react": "19.3.0",
@@ -49,10 +48,12 @@
     "@vitejs/plugin-react": "^6.3.0",
     "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.14.0",
+    "eslint-config-next": "^16.4.5",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^14.0.0",
+    "husky": "^9.1.7",
     "jsdom": "^31.0.0",
+    "lint-staged": "^17.6.0",
     "postcss-styled-syntax": "^0.7.4",
     "prettier": "^3.9.10",
     "stylelint": "^17.16.0",
@@ -70,5 +71,19 @@
   },
   "engines": {
     "node": ">=22.18.0"
+  },
+  "license": "MIT",
+  "lint-staged": {
+    "*.{ts,tsx,mts,js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.css": [
+      "stylelint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

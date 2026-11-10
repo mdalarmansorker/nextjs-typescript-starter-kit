@@ -17,12 +17,15 @@ npm run lint && npm run format:check && npm run stylelint && npm run typecheck &
 
 ### ESLint
 
-- `typescript-eslint` recommended rules
-- React Hooks rules (`react-hooks/exhaustive-deps` is turned off)
-- Next.js `recommended` and `core-web-vitals` rules, e.g. using `next/link` for internal links and `next/script` for scripts
-- Import sorting by group; see [project-structure.md](project-structure.md#imports)
+Built on Next.js's own config (`eslint-config-next`), the same one `create-next-app` uses:
+
+- **`core-web-vitals`**: React, React Hooks (including `exhaustive-deps`), accessibility (`jsx-a11y`) and Next.js rules, with the ones that affect page speed as errors
+- **`typescript`**: typescript-eslint's recommended rules
+- Import sorting by group (`simple-import-sort`); see [project-structure.md](project-structure.md#imports)
 - Unused variables are warnings; prefix with `_` to keep one on purpose
 - `eslint-config-prettier` last, so ESLint never fights Prettier over formatting
+
+`react-hooks/exhaustive-deps` warns when an effect uses a value it doesn't list, which is how stale data bugs start. Fix the dependency list rather than disabling the rule; if an effect really must ignore a value, say why in a comment next to an `eslint-disable-next-line`.
 
 ### Prettier
 
@@ -34,7 +37,20 @@ Requires logical CSS properties (`margin-inline-start` instead of `margin-left`)
 
 ### TypeScript
 
-`strict` mode. Types belong in `.ts` files: `skipLibCheck` skips every `.d.ts` file, including your own.
+`strict` mode, plus:
+
+- `noUncheckedIndexedAccess`: `items[0]` has type `Item | undefined`, so a missing element must be handled
+- `noFallthroughCasesInSwitch`: a `case` can't fall into the next one by accident
+
+Types belong in `.ts` files: `skipLibCheck` skips every `.d.ts` file, including your own.
+
+`npm run typecheck` runs `next typegen` first, which generates the route types (`PageProps<'/login'>`, typed links) that a fresh checkout doesn't have yet.
+
+## Pre-commit hook
+
+`npm install` sets up a Git pre-commit hook (husky) that runs ESLint, Prettier and Stylelint with `--fix` on the staged files (lint-staged, configured in `package.json`). It only looks at what you're committing, so it takes seconds. Type checking and tests run in CI.
+
+To skip it once, e.g. for a work-in-progress commit: `git commit --no-verify`.
 
 ## Node version
 
@@ -48,14 +64,17 @@ nvm use
 
 `.github/workflows/pr-checks.yml` runs on every pull request and every push to `master`. A new push to a pull request cancels the run still going for the previous commit.
 
-| Check       | Runs                                     | Fails when                                          |
-| ----------- | ---------------------------------------- | --------------------------------------------------- |
-| Lint        | `npm run lint`                           | Any ESLint error                                    |
-| Format      | `npm run format:check`                   | Any file isn't Prettier-formatted                   |
-| Stylelint   | `npm run stylelint`                      | A style uses a physical property (`margin-left`)    |
-| Typecheck   | `npm run typecheck`                      | Any type error                                      |
-| Unit tests  | `npm run test:coverage`                  | A test fails or coverage drops below the thresholds |
-| Build & E2E | `npm run build`, then `npm run test:e2e` | The production build or an e2e test fails           |
+| Check       | Runs                                      | Fails when                                           |
+| ----------- | ----------------------------------------- | ---------------------------------------------------- |
+| Lint        | `npm run lint`                            | Any ESLint error                                     |
+| Format      | `npm run format:check`                    | Any file isn't Prettier-formatted                    |
+| Stylelint   | `npm run stylelint`                       | A style uses a physical property (`margin-left`)     |
+| Typecheck   | `npm run typecheck`                       | Any type error                                       |
+| Unit tests  | `npm run test:coverage`                   | A test fails or coverage drops below the thresholds  |
+| Audit       | `npm audit --omit=dev --audit-level=high` | A runtime dependency has a high or critical advisory |
+| Build & E2E | `npm run build`, then `npm run test:e2e`  | The production build or an e2e test fails            |
+
+Actions are pinned to commit SHAs with the version in a comment (`actions/checkout@3d3c… # v7.0.1`): a tag can be moved to different code, a commit can't. Dependabot updates both.
 
 Every check reports on its own, even when another fails. Make them required for merging in the repository's branch protection settings.
 

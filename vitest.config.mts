@@ -40,8 +40,15 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['app/**', 'lib/**', 'services/**', 'utils/**'],
-      exclude: ['**/*.test.{ts,tsx}', 'app/layout.tsx', 'app/page.tsx', '**/*.css'],
+      include: ['app/**', 'lib/**', 'services/**', 'utils/**', 'views/**', 'proxy.ts', 'instrumentation.ts'],
+      // Pages, layouts and metadata routes are covered by the e2e tests instead.
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        'app/**/{page,layout}.tsx',
+        'app/{robots,sitemap}.ts',
+        'app/opengraph-image.tsx',
+        '**/*.css',
+      ],
       reporter: ['text', 'html', 'lcov'],
       // CI fails when coverage drops below these. Raise them as the app grows; don't lower them to pass.
       thresholds: {

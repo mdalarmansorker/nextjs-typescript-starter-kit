@@ -6,7 +6,7 @@ import CookieService from './cookie.service';
 
 // Runs in jsdom (see the comment above), so this covers the browser side (js-cookie). The server side is in cookie.service.server.test.ts.
 afterEach(() => {
-  CookieService.clearSync();
+  CookieService.clearSync(Object.keys(Cookies.get()));
 });
 
 describe('CookieService in the browser', () => {
@@ -21,13 +21,14 @@ describe('CookieService in the browser', () => {
     expect(await CookieService.get('theme')).toBeUndefined();
   });
 
-  it('clears every cookie', async () => {
-    Cookies.set('a', '1');
-    Cookies.set('b', '2');
+  it('clears the auth cookies but keeps everything else', async () => {
+    Cookies.set('__rt', 'refresh');
+    Cookies.set('__prm', 'permissions');
+    Cookies.set('__ts', 'dark');
 
     await CookieService.clear();
 
-    expect(Cookies.get()).toEqual({});
+    expect(Cookies.get()).toEqual({ __ts: 'dark' });
   });
 
   it('offers synchronous helpers', () => {

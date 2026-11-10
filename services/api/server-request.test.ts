@@ -131,6 +131,16 @@ describe('executeServerRequest', () => {
     });
   });
 
+  it('reports a timeout as a 504', async () => {
+    vi.mocked(apiInterceptor).mockRejectedValue(new DOMException('The operation timed out.', 'TimeoutError'));
+
+    expect(await executeServerRequest('/slow')).toEqual({
+      ok: false,
+      status: 504,
+      data: { status: 'error', message: 'The API did not respond in time.', errors: null },
+    });
+  });
+
   it('rethrows Next.js control-flow errors such as redirects', async () => {
     const redirectError = Object.assign(new Error('NEXT_REDIRECT'), {
       digest: 'NEXT_REDIRECT;replace;/login;307;',

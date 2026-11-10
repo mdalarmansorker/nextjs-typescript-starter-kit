@@ -62,7 +62,9 @@ export function normalizeModuleName(name: string): ModuleNames {
   });
 
   const singular = toCases(words);
-  const plural = toCases([...words.slice(0, -1), pluralize(words[words.length - 1])]);
+  // Not empty: checked above.
+  const lastWord = words.at(-1) as string;
+  const plural = toCases([...words.slice(0, -1), pluralize(lastWord)]);
 
   return {
     ...singular,

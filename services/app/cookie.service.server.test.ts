@@ -57,13 +57,18 @@ describe('CookieService on the server', () => {
     expect(store.delete).toHaveBeenCalledWith({ name: '__at', path: '/', domain: 'example.com' });
   });
 
-  it('clears every cookie of the request', async () => {
-    store.getAll.mockReturnValue([{ name: '__at' }, { name: '__rt' }]);
-
+  it('clears only the auth cookies by default', async () => {
     await CookieService.clear();
 
-    expect(store.delete).toHaveBeenCalledWith('__at');
-    expect(store.delete).toHaveBeenCalledWith('__rt');
+    const deleted = store.delete.mock.calls.map(([arg]) => (arg as { name: string }).name);
+
+    expect(deleted).toEqual(['__at', '__rt', '__prm']);
+  });
+
+  it('clears the cookies it is given', async () => {
+    await CookieService.clear(['cart'], { path: '/shop' });
+
+    expect(store.delete).toHaveBeenCalledWith({ name: 'cart', path: '/shop', domain: undefined });
   });
 
   it.each(['storeSync', 'getSync', 'deleteSync', 'clearSync'] as const)('refuses %s on the server', method => {

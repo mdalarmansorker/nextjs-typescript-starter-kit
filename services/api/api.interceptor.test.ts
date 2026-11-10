@@ -22,18 +22,34 @@ beforeEach(() => {
   vi.mocked(CookieService.get).mockResolvedValue(undefined);
 });
 
-const sentHeaders = (): Headers => fetchMock.mock.calls[0][1]!.headers as Headers;
+/** The `init` argument of the nth fetch call. */
+const sentInit = (call = 0): RequestInit => {
+  const init = fetchMock.mock.calls[call]?.[1];
+
+  if (!init) throw new Error(`fetch call ${call} was not made`);
+
+  return init;
+};
+
+const sentHeaders = (call = 0): Headers => sentInit(call).headers as Headers;
 
 describe('apiInterceptor', () => {
-  it('sends JSON headers', async () => {
+  it('asks for JSON', async () => {
     await apiInterceptor('https://api.test/items');
 
     expect(sentHeaders().get('Accept')).toBe('application/json');
-    expect(sentHeaders().get('Content-Type')).toBe('application/json');
     expect(sentHeaders().has('Authorization')).toBe(false);
   });
 
-  it('leaves Content-Type to the browser for FormData', async () => {
+  it('declares a JSON body, but not a missing one', async () => {
+    await apiInterceptor('https://api.test/items', { method: 'POST', body: '{}' });
+    await apiInterceptor('https://api.test/items');
+
+    expect(sentHeaders(0).get('Content-Type')).toBe('application/json');
+    expect(sentHeaders(1).has('Content-Type')).toBe(false);
+  });
+
+  it('leaves Content-Type to fetch for FormData', async () => {
     await apiInterceptor('https://api.test/upload', { method: 'POST', body: new FormData() });
 
     expect(sentHeaders().has('Content-Type')).toBe(false);
@@ -74,8 +90,8 @@ describe('apiInterceptor', () => {
     await apiInterceptor('https://api.test/login', { method: 'post' });
     await apiInterceptor('https://api.test/items');
 
-    expect((fetchMock.mock.calls[0][1]!.headers as Headers).get('X-Forwarded-For')).toBe('203.0.113.7');
-    expect((fetchMock.mock.calls[1][1]!.headers as Headers).has('X-Forwarded-For')).toBe(false);
+    expect(sentHeaders(0).get('X-Forwarded-For')).toBe('203.0.113.7');
+    expect(sentHeaders(1).has('X-Forwarded-For')).toBe(false);
   });
 
   it('marks the request as dynamic unless it is a cached read', async () => {
@@ -87,12 +103,42 @@ describe('apiInterceptor', () => {
   });
 
   it('does not pass its own options on to fetch', async () => {
-    await apiInterceptor('https://api.test/items', { cachedRead: true, cache: 'no-store' });
+    await apiInterceptor('https://api.test/items', { cachedRead: true, timeoutMs: 500, cache: 'no-store' });
 
-    const init = fetchMock.mock.calls[0][1]!;
+    const init = sentInit();
 
     expect(init).not.toHaveProperty('cachedRead');
     expect(init).not.toHaveProperty('requiresAuth');
+    expect(init).not.toHaveProperty('timeoutMs');
     expect(init.cache).toBe('no-store');
+  });
+
+  describe('timeout', () => {
+    /** A fetch that never answers, and rejects like the real one when its signal aborts. */
+    const hangingFetch: typeof fetch = (_url, init) =>
+      new Promise((_resolve, reject) => {
+        const signal = init?.signal;
+
+        if (signal?.aborted) reject(signal.reason);
+        signal?.addEventListener('abort', () => reject(signal.reason));
+      });
+
+    it('cancels a request that takes longer than timeoutMs', async () => {
+      fetchMock.mockImplementation(hangingFetch);
+
+      await expect(apiInterceptor('https://api.test/slow', { timeoutMs: 20 })).rejects.toMatchObject({
+        name: 'TimeoutError',
+      });
+    });
+
+    it('still honours the caller’s own signal', async () => {
+      fetchMock.mockImplementation(hangingFetch);
+      const controller = new AbortController();
+
+      const request = apiInterceptor('https://api.test/slow', { signal: controller.signal });
+      controller.abort();
+
+      await expect(request).rejects.toMatchObject({ name: 'AbortError' });
+    });
   });
 });

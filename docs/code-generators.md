@@ -10,13 +10,13 @@ npm run make:module blogPost
 
 The name can be in any case: `blogPost`, `BlogPost`, `blog_post` and `blog-post` all give the same result.
 
-| File created                         | Contents                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `app/blog-posts/page.tsx`            | Route that renders the view                                                                |
-| `views/blog-posts/BlogPosts.tsx`     | View component with a heading                                                              |
-| `services/api/blog_posts.service.ts` | `BlogPostService` with `index`, `show`, `store`, `update`, `destroy` using `handleRequest` |
-| `types/blog_posts.ts`                | `BlogPost` interface with `id`                                                             |
-| `constants/api/blog_posts.api.ts`    | `BLOG_POSTS = '/blog-posts'`                                                               |
+| File created                         | Contents                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `app/blog-posts/page.tsx`            | Route that renders the view                                                                            |
+| `views/blog-posts/BlogPosts.tsx`     | View component with a heading                                                                          |
+| `services/api/blog_posts.service.ts` | Server-only `BlogPostService` with `index`, `show`, `store`, `update`, `destroy` using `handleRequest` |
+| `types/blog_posts.ts`                | `BlogPost` interface with `id`                                                                         |
+| `constants/api/blog_posts.api.ts`    | `BLOG_POSTS = '/blog-posts'`                                                                           |
 
 It also adds exports to `types/index.ts` and `constants/api/index.ts`, then runs ESLint and Prettier on the files so they match the rest of the code.
 
@@ -26,8 +26,8 @@ After generating:
 
 1. Add the real fields to the type.
 2. Check the endpoint path in the constant matches your API.
-3. Remove `requiresAuth: true` from public endpoints, and add `revalidateTags` to writes if you cache reads. See [api-layer.md](api-layer.md).
-4. Build the view.
+3. Remove `requiresAuth: true` from public endpoints, add `parse` to check responses, and add `revalidateTags` to writes if you cache reads. See [api-layer.md](api-layer.md).
+4. Build the view: read data in the page (a Server Component) and write through server actions. See [api-layer.md](api-layer.md#where-requests-run).
 
 ## make:type
 

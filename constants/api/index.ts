@@ -3,13 +3,11 @@
  */
 export const API_URL: string = process.env.API_URL || '';
 
-/**
- * You can add other API-related constants here as needed
- * Create module file for api constants like auth_api.ts, user_api.ts, etc., if required in future
- * export them from here for easy access
- * Example:
- * export * from './auth.api'
- * export * from './user.api'
- */
+/** How long an API request may take before it is cancelled. Override per request with `timeoutMs`. */
+export const API_TIMEOUT_MS = 10_000;
 
+/*
+ * Endpoint paths live in one file per resource (`auth.api.ts`, `blog_posts.api.ts`) and are exported here.
+ * `npm run make:module` adds the export for you.
+ */
 export * from './auth.api';

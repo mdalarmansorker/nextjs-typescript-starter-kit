@@ -19,27 +19,44 @@ What the kit already does, and what you need to decide for your deployment.
 
 ### Secrets stay on the server
 
-- `API_URL`, the access token and `ENCRYPTION_KEY` are read on the server only. API calls run in a server action even when started from the browser.
-- Auth cookies should be `httpOnly` (see [auth-and-cookies.md](auth-and-cookies.md)), so page scripts can't read them.
-- `*.server.ts` modules import `server-only`, so the build fails if one ends up in a client bundle.
+- `API_URL`, the access token and `ENCRYPTION_KEY` are read on the server only. The API layer imports `server-only`, so the build fails if a client component imports it.
+- The access token is stored in an `httpOnly` cookie, so page scripts (including injected ones) can't read it.
+- The API layer is not a server action, so visitors can't call it with their own arguments. Client components reach the API only through server actions you write, which validate their input (see `app/login/actions.ts`).
 
 ### API requests stay inside API_URL
 
-`executeServerRequest` is a server action, which means any visitor can call it with any arguments. It refuses a path that doesn't start with a single `/` or that resolves outside `API_URL` (`/../admin`, `@other-host`), so it can't be used to reach other servers or other paths on the API host.
+Paths are built from slugs that often contain user input (`/users/${id}`). `executeServerRequest` refuses a slug that doesn't start with a single `/` or that resolves outside `API_URL` (`/../admin`, `@other-host`), so a crafted ID can't reach other servers or other paths on the API host. Encode IDs with `encodeURIComponent` as well.
 
-It still forwards any path under `API_URL`, with the visitor's own token, and any `revalidateTags`. That is fine when every endpoint enforces its own authorization (it should), but anyone can clear any cache tag. If that matters, call the API from domain-specific server actions instead and validate their input.
+### API failures don't leak
 
-### Redirects stay on the site
+Requests time out after 10 seconds, so a hanging API can't tie up the server. Responses can be checked with `parse`. Messages of 5xx errors (which can contain internal addresses) are logged, not shown: see [api-layer.md](api-layer.md#error-handling). Error pages show only a reference ID (`digest`); the details are in the server log.
 
-`decryptRedirectUrl` only returns paths on this site. Use `isSafeRedirectPath` from `utils/redirect-encryption.ts` for any other redirect target that comes from a URL or form.
+### Login and logout
+
+- Login forms are validated on the server with zod before the API is called. The password is never returned to the browser.
+- Pages in `PROTECTED_ROUTES` redirect logged-out users to login. The API still checks the token on every request; the proxy only checks that a token exists.
+- `/api/auth/clear` ignores requests started by other sites (`Sec-Fetch-Site`), so another site can't log users out.
+- Post-login redirects only go to paths on this site (`utils/redirect-path.ts`).
+
+See [auth-and-cookies.md](auth-and-cookies.md).
 
 ### Visitor IP addresses
 
 The visitor's IP is forwarded to the API (`X-Forwarded-For`) on non-GET requests, so the API can rate-limit logins per address. It is only read from `TRUSTED_CLIENT_IP_HEADER`, and only set that when your proxy (Cloudflare, nginx, a load balancer) overwrites the header. Otherwise a visitor could send any address and get around the limit. The value must look like an IP address or it is dropped.
 
+### Error reporting
+
+`instrumentation.ts` receives every server error (pages, server actions, route handlers, proxy) and logs it as one JSON line without request headers, so tokens in cookies never reach the logs. Connect your error tracker there.
+
 ### Encryption
 
 `utils/encryption.server.ts` uses AES-256-GCM with a purpose label, expiry and key rotation. See [encryption.md](encryption.md).
+
+### Supply chain
+
+- `npm audit` runs in CI and fails on high or critical advisories in runtime dependencies.
+- GitHub Actions are pinned to commit SHAs, so a moved tag can't run other code in CI.
+- Dependabot opens update pull requests weekly (npm) and monthly (Actions).
 
 ## Decide for your deployment
 
@@ -57,16 +74,18 @@ Browsers remember it for `max-age`, so start lower (e.g. `max-age=300`) if you'r
 
 Limits where scripts, styles and images can load from. It is the main defense against XSS, but it depends on every script and service the app uses (analytics, fonts, payment widgets), so it isn't set by default. Next.js supports nonce-based policies set in `proxy.ts`; see the Next.js Content Security Policy guide.
 
-### Logout via GET
+### Rate limiting
 
-`/api/auth/clear` ends the session on a GET request, so another site could log users out by embedding it (an image tag pointing at it). That is a nuisance, not a data leak. If it matters, change it to POST and log out with a form.
+Login attempts should be limited per account and per IP address. Do this in the API (it receives the visitor's IP, see above) or at your proxy.
 
 ## Checklist before going live
 
 - [ ] `ENCRYPTION_KEY` is set and is not the one from development
 - [ ] `TRUSTED_CLIENT_IP_HEADER` is set only if your proxy overwrites that header
-- [ ] Auth cookies are set with `httpOnly`, `secure` and `sameSite`
-- [ ] Pages that need login are protected (see [auth-and-cookies.md](auth-and-cookies.md#to-build-yourself))
+- [ ] `LoginResponseSchema` matches your API, and every protected section is in `PROTECTED_ROUTES`
+- [ ] Every API endpoint checks the token and the user's permissions itself
+- [ ] The API rate-limits login attempts
 - [ ] HSTS is on (from your host or `next.config.ts`)
 - [ ] You've decided on a Content-Security-Policy
-- [ ] `npm audit` reports no high-severity issues
+- [ ] An error tracker is connected in `instrumentation.ts`
+- [ ] CI is green, including the audit

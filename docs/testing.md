@@ -55,6 +55,21 @@ vi.mocked(cookies).mockResolvedValue(fakeCookieStore as never);
 
 **Environment variables.** Use `vi.stubEnv('NAME', 'value')`; it is reset after the test. If the module reads the variable once and caches it, call `vi.resetModules()` and import it again (see `utils/encryption.server.test.ts`).
 
+**Server actions.** Call the action with a `FormData` and mock the services it uses. `redirect()` works by throwing, so mock it to throw and expect the rejection (see `app/login/actions.test.ts`):
+
+```ts
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn(() => {
+    throw new Error('NEXT_REDIRECT');
+  }),
+}));
+
+await expect(login({}, formData)).rejects.toThrow('NEXT_REDIRECT');
+expect(redirect).toHaveBeenCalledWith('/dashboard');
+```
+
+**The proxy.** Call `proxy()` with a `NextRequest` and check the redirect `location`, or the headers it passes on (`x-middleware-request-<name>`). See `proxy.test.ts`.
+
 **Route handlers.** Call the exported function with a `NextRequest`:
 
 ```ts
@@ -66,7 +81,7 @@ expect(res.status).toBe(307);
 
 ### Coverage
 
-`npm run test:coverage` fails when coverage of `app/`, `lib/`, `services/` and `utils/` drops below 80% of lines, statements and functions, or 75% of branches. CI runs it on every pull request. Raise the numbers in `vitest.config.mts` as coverage grows; don't lower them to make a build pass.
+`npm run test:coverage` fails when coverage of `app/`, `lib/`, `services/`, `utils/`, `views/` and `proxy.ts` (pages, layouts and metadata routes excluded; the e2e tests cover those) drops below 80% of lines, statements and functions, or 75% of branches. CI runs it on every pull request. Raise the numbers in `vitest.config.mts` as coverage grows; don't lower them to make a build pass.
 
 ## End-to-end tests
 
@@ -76,17 +91,40 @@ npm run build
 npm run test:e2e
 ```
 
-The tests run in Chromium against `next start`, the same build that gets deployed. Locally, a server already running on port 3000 is reused; set `PORT` to use another one. On failure in CI, the HTML report is uploaded as the `playwright-report` artifact.
+Playwright starts two servers (`playwright.config.ts`) and runs the tests in Chromium:
 
-Use e2e tests for what only works in a real browser and server: navigation, redirects, cookies, headers, full pages. Keep logic tests in Vitest, where they are much faster.
+| Server   | Port | What                                                                     |
+| -------- | ---- | ------------------------------------------------------------------------ |
+| Mock API | 4010 | `e2e/mock-api.mjs`, a stand-in for your backend                          |
+| The app  | 3100 | `next start` with `API_URL` pointing at the mock API: the deployed build |
+
+The app runs on its own port so a `next dev` on 3000 is never mistaken for it. Locally, servers that are already running are reused; set `PORT` to use another app port. On failure in CI, the HTML report is uploaded as the `playwright-report` artifact.
+
+### The mock API
+
+`e2e/mock-api.mjs` answers the requests the e2e tests need, e.g. `POST /api/auth/login` returns a token for the password `correct-password` and a 422 validation error otherwise. When you add a page that calls the API, add its endpoint there with realistic data. The app calls the API from the server, so `page.route()` can't intercept those requests; the mock API can.
+
+### What to test end to end
+
+Use e2e tests for what only works in a real browser and server: navigation, redirects, cookies, headers, whole user flows. Keep logic tests in Vitest, where they are much faster. `e2e/auth.spec.ts` shows the pattern:
 
 ```ts
-test('unknown pages show the not-found page with a 404', async ({ page }) => {
-  const response = await page.goto('/this-page-does-not-exist');
+test('a protected page sends a logged-out user to login, and back after logging in', async ({ page }) => {
+  await page.goto('/dashboard?tab=reports');
+  await expect(page).toHaveURL(/\/login\?redirect=/);
 
-  expect(response?.status()).toBe(404);
-  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+  await page.getByLabel('Email').fill('ada@example.com');
+  await page.getByLabel('Password').fill('correct-password');
+  await page.getByRole('button', { name: 'Log in' }).click();
+
+  await expect(page).toHaveURL('/dashboard?tab=reports');
 });
 ```
 
-Pages that call the API need a backend. Either point `API_URL` at a test backend, or mock responses in the browser with `page.route()` for calls made from the browser.
+To start a test logged in, add the cookie instead of going through the form:
+
+```ts
+await context.addCookies([{ name: '__at', value: 'e2e-token', url: baseURL! }]);
+```
+
+Next.js adds an empty `role="alert"` element (its route announcer) to every page, so narrow alert locators by text: `page.getByRole('alert').filter({ hasText: '…' })`.

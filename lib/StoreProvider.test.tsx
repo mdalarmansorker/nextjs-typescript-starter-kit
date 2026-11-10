@@ -45,7 +45,9 @@ describe('StoreProvider', () => {
       </>,
     );
 
-    await userEvent.click(screen.getAllByRole('button')[0]);
+    const [firstButton] = screen.getAllByRole('button', { name: 'Open reports' });
+
+    await userEvent.click(firstButton!);
 
     expect(screen.getAllByRole('heading').map(h => h.textContent)).toEqual(['Reports', 'Untitled']);
   });

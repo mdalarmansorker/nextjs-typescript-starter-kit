@@ -1,5 +1,9 @@
 import Cookies from 'js-cookie';
 
+import { COOKIE_NAMES } from '@/constants/cookie';
+
+const AUTH_COOKIE_NAMES: readonly string[] = Object.values(COOKIE_NAMES);
+
 interface ServerCookieOptions {
   expires?: Date;
   maxAge?: number;
@@ -118,26 +122,17 @@ export default class CookieService {
   }
 
   /**
-   * Clears all cookies accessible from the current location.
-   * Note: Only works on client-side. Server-side requires explicit cookie names.
+   * Deletes the given cookies; by default the app's auth cookies (`COOKIE_NAMES`).
+   *
+   * Only cookies this app owns are deleted, never every cookie, so consent, analytics and theme cookies
+   * survive a logout. In the browser, `httpOnly` cookies (like the access token) can't be deleted: end a
+   * session through `/api/auth/clear` instead.
+   * @param names The cookies to delete.
+   * @param options Optional cookie options (path, domain) the cookies were set with.
    */
-  static async clear(): Promise<void> {
-    if (this.isServer()) {
-      const cookieStore = await this.getServerCookies();
-
-      if (cookieStore) {
-        const allCookies = cookieStore.getAll();
-
-        allCookies.forEach(cookie => {
-          cookieStore.delete(cookie.name);
-        });
-      }
-    } else {
-      const allCookies = Cookies.get();
-
-      Object.keys(allCookies).forEach(cookieName => {
-        Cookies.remove(cookieName);
-      });
+  static async clear(names: readonly string[] = AUTH_COOKIE_NAMES, options?: Cookies.CookieAttributes): Promise<void> {
+    for (const name of names) {
+      await this.delete(name, options);
     }
   }
 
@@ -169,15 +164,13 @@ export default class CookieService {
     Cookies.remove(name, options);
   }
 
-  static clearSync(): void {
+  static clearSync(names: readonly string[] = AUTH_COOKIE_NAMES, options?: Cookies.CookieAttributes): void {
     if (this.isServer()) {
       throw new Error('clearSync cannot be used on server-side. Use clear() instead.');
     }
 
-    const allCookies = Cookies.get();
-
-    Object.keys(allCookies).forEach(cookieName => {
-      Cookies.remove(cookieName);
-    });
+    for (const name of names) {
+      Cookies.remove(name, options);
+    }
   }
 }
