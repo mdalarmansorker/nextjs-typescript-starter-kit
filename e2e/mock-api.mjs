@@ -5,6 +5,8 @@
  * POST /api/auth/login  { email, password }  →  200 { token } for the password "correct-password",
  *                                                422 `{ message, errors }` validation error otherwise
  * POST /api/auth/logout  Bearer token          →  204, and remembers the token as revoked
+ * POST /api/auth/refresh { refresh_token }     →  200 new tokens for a token starting with "valid-refresh",
+ *                                                401 otherwise
  * GET  /revoked-tokens                         →  the tokens revoked so far, for assertions
  */
 import { createServer } from 'node:http';
@@ -40,6 +42,20 @@ const server = createServer(async (request, response) => {
     revokedTokens.push(token);
     response.writeHead(204);
     return response.end();
+  }
+
+  if (request.method === 'POST' && request.url === '/api/auth/refresh') {
+    const { refresh_token: refreshToken } = await readJson(request);
+
+    if (typeof refreshToken === 'string' && refreshToken.startsWith('valid-refresh')) {
+      return send(response, 200, {
+        access_token: 'refreshed-access',
+        refresh_token: `${refreshToken}-rotated`,
+        expires_in: 3600,
+      });
+    }
+
+    return send(response, 401, { message: 'Invalid refresh token.' });
   }
 
   if (request.url === '/revoked-tokens') return send(response, 200, revokedTokens);

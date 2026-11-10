@@ -56,6 +56,7 @@ Scaffold a new feature with `npm run make:module <name>` (page, view, service, t
 
 - Add protected sections to `PROTECTED_ROUTES` in `constants/routes.ts`. The proxy only checks that a token cookie exists; the API must still authorize every request.
 - Add new environment variables to `.env.example`, `EnvSchema` in `utils/validate-env.ts` and `docs/environment-variables.md`.
+- Store tokens with `saveSession({ accessToken, refreshToken?, expiresIn? })`. Token responses are parsed by `TokenResponseSchema` (`services/api/auth-tokens.ts`); token refresh is automatic, see `docs/auth-and-cookies.md`.
 - Add auth cookies to `COOKIE_NAMES` in `constants/cookie.ts` so logout deletes them.
 - Redirect targets from URLs or forms must pass `isSafeRedirectPath` (`utils/redirect-path.ts`).
 - Never expose `API_URL`, tokens or `ENCRYPTION_KEY` to the browser. Only `NEXT_PUBLIC_*` variables reach client code.

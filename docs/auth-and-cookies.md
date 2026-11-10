@@ -1,6 +1,6 @@
 # Authentication and Sessions
 
-How users log in and out, how pages are protected, and how the access token is stored.
+How users log in and out, how pages are protected, how tokens are stored and refreshed.
 
 ## Overview
 
@@ -9,7 +9,9 @@ How users log in and out, how pages are protected, and how the access token is s
 | Login page and form              | `app/login/page.tsx`, `views/login/LoginForm.tsx` |
 | Login server action              | `app/login/actions.ts`                            |
 | Login request and response check | `services/api/auth.service.ts`                    |
-| Storing the token                | `services/app/session.service.ts`                 |
+| Token response shapes, refresh   | `services/api/auth-tokens.ts`                     |
+| Storing and refreshing tokens    | `services/app/session.service.ts`                 |
+| Refresh before a page renders    | `app/api/auth/refresh/route.ts`                   |
 | Page protection                  | `proxy.ts`, `constants/routes.ts`                 |
 | Logout and expired sessions      | `app/api/auth/clear/route.ts`                     |
 | Return-to-page after login       | `utils/redirect-path.ts`                          |
@@ -18,8 +20,8 @@ How users log in and out, how pages are protected, and how the access token is s
 ## Logging in
 
 1. The user submits `/login`. `app/login/actions.ts` checks the form with zod, then calls `AuthService.login`, which posts to `AUTH_LOGIN` (`/auth/login`).
-2. The response is checked against `LoginResponseSchema` in `services/api/auth.service.ts`. **Change this schema to match your API.** It expects `{ token: string }` (Laravel Sanctum's shape).
-3. `saveSession(token)` stores the token in the `__at` cookie: `httpOnly`, `secure` outside development, `sameSite: 'lax'`, for 15 days.
+2. The response is checked against `TokenResponseSchema` in `services/api/auth-tokens.ts`, which accepts the common names: `token`, `access_token`, `accessToken` or `access` for the access token; `refresh_token`, `refreshToken` or `refresh` for the refresh token; `expires_in` or `expiresIn` for its lifetime in seconds. **If your API sends something else** (e.g. tokens nested under `data`), change the schema.
+3. `saveSession(session)` stores the access token in the `__at` cookie (`httpOnly`, `secure` outside development, `sameSite: 'lax'`). The cookie expires 30 seconds before the token when the API sends `expires_in`, else after 15 days. A refresh token goes in the `__rt` cookie for 15 days.
 4. The user is sent to the page in `?redirect=`, or to `AFTER_LOGIN_ROUTE` (`/dashboard`).
 
 Errors the API returns for the login (4xx) are shown on the form with their field errors. Server-side failures (API down, timeout) show a generic message and are logged.
@@ -37,7 +39,7 @@ Errors the API returns for the login (4xx) are shown on the form with their fiel
 
 `proxy.ts` runs before every page request. A logged-out user opening a protected page goes to `/login?redirect=<page>`; after login they come back to it.
 
-"Logged in" in the proxy means **the token cookie exists**. Whether the token is still valid only the API knows: an expired token gets a 401 on the first API call, which ends the session (see below). Never rely on the proxy alone for authorization: every API endpoint must check the token itself.
+"Logged in" in the proxy means **an access-token or refresh-token cookie exists**. Whether a token is still valid only the API knows: a rejected token gets a 401 on the first API call, which refreshes it or ends the session (see below). Never rely on the proxy alone for authorization: every API endpoint must check the token itself.
 
 ## Logging out
 
@@ -57,9 +59,31 @@ The POST first calls `AuthService.logout()`, which sends `POST AUTH_LOGOUT` (`/a
 
 ## Expired sessions
 
-When an API request with `requiresAuth` gets a 401, `handleRequest` redirects to `GET /api/auth/clear?redirect=<current page>`, which deletes the auth cookies and redirects to `/login?redirect=…`.
+When an API request with `requiresAuth` gets a 401 and there is no refresh token (or refreshing fails), `handleRequest` redirects to `GET /api/auth/clear?redirect=<current page>`, which deletes the auth cookies and redirects to `/login?redirect=…`.
 
 `/api/auth/clear` ignores requests started by another site (`Sec-Fetch-Site: cross-site` or `same-site`): it redirects without deleting anything, so another site can't log your users out by embedding the URL in an image or form.
+
+## Token refresh
+
+Used when the login response includes a refresh token. APIs without refresh tokens (e.g. Laravel Sanctum) need no changes: no `__rt` cookie is ever stored, so none of this runs. Set `AUTH_REFRESH` to `null` in `constants/api/auth.api.ts` to turn it off completely.
+
+Next.js only lets server actions and route handlers set cookies, not Server Components, so the refresh happens in one of three places:
+
+| When                                                    | Where                                                                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| A page loads after the access cookie expired            | `proxy.ts` sends the GET to `/api/auth/refresh?redirect=<page>`, which stores new tokens and comes back |
+| The API returns 401 in a server action or route handler | `handleRequest` refreshes, stores the new tokens and retries the request once                           |
+| The API returns 401 while a Server Component renders    | `handleRequest` redirects to `/api/auth/refresh?redirect=<page>`                                        |
+
+The first case covers most expiries before any API call is made, because the access cookie expires 30 seconds before the token. The other two catch tokens that the API rejects early (revoked, or no `expires_in` sent).
+
+If the API rejects the refresh token (4xx), the session ends and the user goes to login, keeping the page to return to. If the API can't be reached (5xx, timeout), the error is shown instead, so an outage doesn't log everyone out. A second 401 right after a successful refresh ends the session instead of looping.
+
+**The refresh request** is `POST AUTH_REFRESH` (`/auth/refresh`) with `{ "refresh_token": "…" }`, built in `sendRefresh` in `services/api/auth-tokens.ts`. Change it there if your API expects another body (Django SimpleJWT: `{ refresh }`; OAuth 2: form-encoded `grant_type=refresh_token`) or the token in a header. The response goes through `TokenResponseSchema`, like the login response. A response without a new refresh token keeps the old one.
+
+**Rotating refresh tokens.** Many APIs issue a new refresh token on every refresh and reject the old one. When several requests need a refresh at once (parallel requests, several tabs), they share one API call: results are reused for 10 seconds per refresh token. This sharing is per server process; with several instances, give the API a short grace period for the previous refresh token.
+
+**Logout** sends the refresh token in the body of the logout request, so the API can revoke it too.
 
 ## Returning to the page after login
 
@@ -71,13 +95,13 @@ What makes it safe: `encodeRedirectPath` and `decodeRedirectPath` only accept pa
 
 `constants/cookie.ts`:
 
-| Constant                     | Value   | Use                                   |
-| ---------------------------- | ------- | ------------------------------------- |
-| `COOKIE_NAMES.ACCESS_TOKEN`  | `__at`  | Token sent to the API as `Bearer`     |
-| `COOKIE_NAMES.REFRESH_TOKEN` | `__rt`  | Refresh token, if your API issues one |
-| `COOKIE_NAMES.PERMISSIONS`   | `__prm` | Cached permissions, if you need them  |
-| `AUTH_COOKIES_DURATION_DAYS` | `15`    | Lifetime in days                      |
-| `COOKIE_SECURE`              | bool    | `true` everywhere except `next dev`   |
+| Constant                     | Value   | Use                                                                                                     |
+| ---------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
+| `COOKIE_NAMES.ACCESS_TOKEN`  | `__at`  | Token sent to the API as `Bearer`                                                                       |
+| `COOKIE_NAMES.REFRESH_TOKEN` | `__rt`  | Refresh token, if your API issues one                                                                   |
+| `COOKIE_NAMES.PERMISSIONS`   | `__prm` | Cached permissions, if you need them                                                                    |
+| `AUTH_COOKIES_DURATION_DAYS` | `15`    | Lifetime of the refresh-token cookie, and of the access-token cookie when the API sends no `expires_in` |
+| `COOKIE_SECURE`              | bool    | `true` everywhere except `next dev`                                                                     |
 
 Every name in `COOKIE_NAMES` is deleted at logout, so add new auth cookies there. Don't use `__ts`: it is reserved for theme settings.
 
@@ -104,5 +128,4 @@ On the server, cookies can only be written in a server action or route handler, 
 ## To build yourself
 
 - **Registration, password reset, email verification**: add endpoints to `constants/api/auth.api.ts`, methods to `AuthService`, and pages like `/login`.
-- **Token refresh**, if your API uses refresh tokens: on a 401, call the refresh endpoint and retry before ending the session.
 - **Permissions**: protect pages by role in the page or layout (`notFound()` or `redirect()`), not only in the proxy.

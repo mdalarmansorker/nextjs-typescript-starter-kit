@@ -6,6 +6,8 @@ import { z } from 'zod';
 
 import { decodeRedirectPath } from '@/utils/redirect-path';
 
+import { canSaveSession, getRefreshToken, refreshSession } from '@/services/app/session.service';
+
 import { ApiError } from './api-errors';
 import { handleRequest } from './base.service';
 import { executeServerRequest } from './server-request';
@@ -17,10 +19,19 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 vi.mock('./server-request', () => ({ executeServerRequest: vi.fn() }));
+vi.mock('@/services/app/session.service', () => ({
+  canSaveSession: vi.fn(),
+  getRefreshToken: vi.fn(),
+  refreshSession: vi.fn(),
+}));
 
 const apiError = { status: 'error' as const, message: 'Validation failed', errors: { email: ['Taken'] } };
 
 beforeEach(() => {
+  vi.resetAllMocks();
+  vi.mocked(redirect).mockImplementation(() => {
+    throw new Error('NEXT_REDIRECT');
+  });
   vi.mocked(headers).mockResolvedValue(new Headers() as never);
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -125,6 +136,60 @@ describe('handleRequest', () => {
         status: 401,
       });
       expect(redirect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('token refresh', () => {
+    const unauthorized = { ok: false as const, status: 401, data: apiError };
+
+    beforeEach(() => {
+      vi.mocked(getRefreshToken).mockResolvedValue('ref');
+    });
+
+    it('refreshes and retries once in a server action', async () => {
+      vi.mocked(canSaveSession).mockResolvedValue(true);
+      vi.mocked(refreshSession).mockResolvedValue(true);
+      vi.mocked(executeServerRequest)
+        .mockResolvedValueOnce(unauthorized)
+        .mockResolvedValueOnce({ ok: true, status: 200, data: { id: 1 } });
+
+      expect(await handleRequest('/me', { requiresAuth: true })).toEqual({ id: 1 });
+      expect(executeServerRequest).toHaveBeenCalledTimes(2);
+      expect(redirect).not.toHaveBeenCalled();
+    });
+
+    it('ends the session when the API rejects the refresh token', async () => {
+      vi.mocked(canSaveSession).mockResolvedValue(true);
+      vi.mocked(refreshSession).mockResolvedValue(false);
+      vi.mocked(executeServerRequest).mockResolvedValue(unauthorized);
+
+      await expect(handleRequest('/me', { requiresAuth: true })).rejects.toThrow('NEXT_REDIRECT');
+      expect(redirect).toHaveBeenCalledWith('/api/auth/clear');
+      expect(executeServerRequest).toHaveBeenCalledOnce();
+    });
+
+    it('ends the session when the new token is refused too, without looping', async () => {
+      vi.mocked(canSaveSession).mockResolvedValue(true);
+      vi.mocked(refreshSession).mockResolvedValue(true);
+      vi.mocked(executeServerRequest).mockResolvedValue(unauthorized);
+
+      await expect(handleRequest('/me', { requiresAuth: true })).rejects.toThrow('NEXT_REDIRECT');
+      expect(refreshSession).toHaveBeenCalledOnce();
+      expect(redirect).toHaveBeenCalledWith('/api/auth/clear');
+    });
+
+    it('sends a Server Component render through the refresh route, back to the current page', async () => {
+      vi.mocked(canSaveSession).mockResolvedValue(false);
+      vi.mocked(headers).mockResolvedValue(new Headers({ 'x-current-path': '/projects' }) as never);
+      vi.mocked(executeServerRequest).mockResolvedValue(unauthorized);
+
+      await expect(handleRequest('/me', { requiresAuth: true })).rejects.toThrow('NEXT_REDIRECT');
+
+      const target = new URL(vi.mocked(redirect).mock.calls[0]![0], 'https://app.test');
+
+      expect(target.pathname).toBe('/api/auth/refresh');
+      expect(decodeRedirectPath(target.searchParams.get('redirect'))).toBe('/projects');
+      expect(refreshSession).not.toHaveBeenCalled();
     });
   });
 });

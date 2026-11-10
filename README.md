@@ -11,7 +11,7 @@ A starter for Next.js apps that talk to a separate REST API, whatever it's built
 - **Next.js 16** App Router with React 19 and TypeScript in strict mode
 - **Server-only API layer** with timeouts, query parameters, runtime response checks (zod), typed errors and expired-session handling
 - **Works with any REST backend**: error bodies and field errors are read from the common formats (Laravel, Django REST Framework, FastAPI, Express, RFC 9457, JSON:API) in one adaptable function
-- **Login, logout and protected routes**: login page and server action, `httpOnly` token cookie, token revocation on logout, `proxy.ts` route protection, return-to-page after login
+- **Login, logout and protected routes**: login page and server action, `httpOnly` token cookies, token refresh (with rotating refresh tokens), token revocation on logout, `proxy.ts` route protection, return-to-page after login
 - **Environment check at startup**: a missing `API_URL` or malformed key stops the server with a clear list of problems
 - **AES-256-GCM encryption** with purpose labels, expiry and key rotation
 - **Redux Toolkit** with typed hooks and a per-request store
@@ -36,7 +36,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000). Logging in needs your backend at `API_URL`. To connect your API:
 
 1. Set the endpoint paths in `constants/api/auth.api.ts` (`AUTH_LOGOUT = null` if your API has no logout endpoint).
-2. Change `LoginResponseSchema` in `services/api/auth.service.ts` to your API's login response.
+2. Check that your login response fits `TokenResponseSchema` in `services/api/auth-tokens.ts` (it accepts `token`, `access_token`, `access`, refresh tokens and `expires_in`). Set `AUTH_REFRESH = null` if your API has no refresh endpoint.
 3. If your API's error bodies aren't one of the common shapes, adapt `readApiError` in `services/api/api-errors.ts`.
 
 ## Scripts

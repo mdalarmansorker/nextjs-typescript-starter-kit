@@ -161,7 +161,7 @@ Backends shape error bodies differently. `readApiError` in `services/api/api-err
 
 ### Expired sessions
 
-On a 401 for a `requiresAuth` request, `handleRequest` redirects to `/api/auth/clear?redirect=<current page>`, which deletes the auth cookies and sends the user to `/login`. After logging in they return to the page they were on. The current page comes from the `x-current-path` header that `proxy.ts` sets.
+On a 401 for a `requiresAuth` request, `handleRequest` first tries to refresh the token when a refresh token is stored: in a server action or route handler it refreshes and retries the request once; while a Server Component renders it redirects to `/api/auth/refresh`, which refreshes and comes back. See [Token refresh](auth-and-cookies.md#token-refresh). Without a refresh token, or when the refresh is rejected, it redirects to `/api/auth/clear?redirect=<current page>`, which deletes the auth cookies and sends the user to `/login`. After logging in they return to the page they were on. The current page comes from the `x-current-path` header that `proxy.ts` sets.
 
 Redirects are thrown by Next.js, so rethrow them if you wrap server code in `try/catch`. `unstable_rethrow` from `next/navigation` does this, or call `redirect` outside the `try`.
 

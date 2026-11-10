@@ -39,9 +39,7 @@ export async function login(_previous: LoginState, formData: FormData): Promise<
   }
 
   try {
-    const { token } = await AuthService.login(parsed.data);
-
-    await saveSession(token);
+    await saveSession(await AuthService.login(parsed.data));
   } catch (error) {
     if (error instanceof ApiError && error.status < 500) {
       // The API's own message and field errors, e.g. "These credentials do not match our records."

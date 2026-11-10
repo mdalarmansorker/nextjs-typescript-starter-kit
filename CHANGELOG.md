@@ -18,6 +18,8 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - `LICENSE` (MIT), `CONTRIBUTING.md`, pull request template, and guides for every area in `docs/`.
 - Environment variables are checked when the server starts (`utils/validate-env.ts`, called from `register()` in `instrumentation.ts`); a missing `API_URL` or malformed key stops the server with a list of problems.
 - Logout revokes the token on the API (`AuthService.logout`, `AUTH_LOGOUT`) before deleting the cookies. Set `AUTH_LOGOUT` to `null` if your API has no logout endpoint.
+- Token refresh for APIs that issue refresh tokens: the proxy refreshes an expired access token before the page renders (`/api/auth/refresh`), and `handleRequest` refreshes and retries once on a 401. Parallel refreshes with the same refresh token share one API call, so rotating refresh tokens work. `AUTH_REFRESH = null` turns it off.
+- Login and refresh responses are read by `TokenResponseSchema` (`services/api/auth-tokens.ts`), which accepts `token`, `access_token`, `accessToken` or `access`, plus an optional refresh token and `expires_in`. The access cookie expires with the token.
 - `query` option on `handleRequest` for encoded query parameters.
 - `endSessionOn401` option on `handleRequest`, to get the `ApiError` instead of ending the session.
 - `ApiError.fieldErrors`: field errors as `{ field: ['message'] }` from the common API formats (Laravel, FastAPI, express-validator, zod, JSON:API).
@@ -32,6 +34,8 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - ESLint uses `eslint-config-next` (React, accessibility and Core Web Vitals rules); `react-hooks/exhaustive-deps` is on.
 - TypeScript checks with `noUncheckedIndexedAccess` and `noFallthroughCasesInSwitch`; `typecheck` generates route types first.
 - `/api/auth/clear` accepts POST for logout forms and ignores requests started by other sites.
+- **Breaking:** `saveSession` takes `{ accessToken, refreshToken?, expiresIn? }` instead of a token string, and `AuthService.login` returns that shape. `LoginResponseSchema` is replaced by `TokenResponseSchema`.
+- Logout sends the refresh token in its body so the API can revoke it.
 - API error bodies are read by `readApiError` (`services/api/api-errors.ts`), which understands `{ message }`, `{ error }`, `{ detail }` and RFC 9457 problem details, not only `{ message, errors }`.
 - Code generators run on Node's built-in TypeScript support, refuse to overwrite files, and generate server-only services.
 - Prettier formats every file type; GitHub Actions are pinned to commit SHAs.

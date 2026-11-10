@@ -9,6 +9,7 @@ import { COOKIE_NAMES } from '@/constants/cookie';
 import { GET, POST } from './route';
 
 vi.mock('@/services/api/auth.service', () => ({ default: { logout: vi.fn() } }));
+vi.mock('@/services/app/session.service', () => ({ getRefreshToken: vi.fn(async () => 'refresh') }));
 
 const request = (path: string, init: { method?: string; site?: string; token?: string } = {}) => {
   const headers = new Headers();
@@ -70,7 +71,7 @@ describe('/api/auth/clear', () => {
   it('revokes the token on the API before deleting the cookies', async () => {
     const res = await POST(request('/api/auth/clear', { method: 'POST', site: 'same-origin', token: 'abc' }));
 
-    expect(AuthService.logout).toHaveBeenCalledOnce();
+    expect(AuthService.logout).toHaveBeenCalledWith('refresh');
     expect(deletedCookies(res)).toEqual(Object.values(COOKIE_NAMES));
   });
 

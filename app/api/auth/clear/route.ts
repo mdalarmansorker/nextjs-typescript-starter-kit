@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import AuthService from '@/services/api/auth.service';
+import { getRefreshToken } from '@/services/app/session.service';
 
 import { COOKIE_NAMES } from '@/constants/cookie';
 import { LOGIN_ROUTE } from '@/constants/routes';
@@ -58,7 +59,7 @@ export function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!isCrossSite(request) && request.cookies.has(COOKIE_NAMES.ACCESS_TOKEN)) {
     try {
-      await AuthService.logout();
+      await AuthService.logout(await getRefreshToken());
     } catch (error) {
       console.error('Revoking the token on the API failed:', error);
     }
