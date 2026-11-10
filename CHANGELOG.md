@@ -16,6 +16,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - Unit and component tests (Vitest, React Testing Library), end-to-end tests (Playwright) with a mock backend, and coverage thresholds.
 - Pre-commit hook (husky, lint-staged), `npm audit` in CI, Dependabot.
 - Security headers, error and 404 pages.
+- `AGENTS.md` with project rules for AI coding agents, plus Next.js's managed docs block; `CLAUDE.md` imports it.
 - `LICENSE` (MIT), `CONTRIBUTING.md`, pull request template, and guides for every area in `docs/`.
 
 ### Changed
