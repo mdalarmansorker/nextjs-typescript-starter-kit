@@ -48,6 +48,14 @@ describe('/api/auth/clear', () => {
     expect(new URL(res.headers.get('location')!).origin).toBe('https://app.example.com');
   });
 
+  it('answers a client-side navigation with a full page load instead of redirecting', () => {
+    const res = GET(new NextRequest('https://app.example.com/api/auth/clear?_rsc=abc', { headers: { rsc: '1' } }));
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get('location')).toBeNull();
+    expect(deletedCookies(res)).toEqual([]);
+  });
+
   it.each([undefined, 'same-origin', 'none'])('deletes every auth cookie (Sec-Fetch-Site: %s)', site => {
     const res = GET(request('/api/auth/clear', { site }));
 

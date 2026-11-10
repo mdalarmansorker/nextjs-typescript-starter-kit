@@ -133,4 +133,34 @@ test.describe('token refresh', () => {
     await expect(page).toHaveURL(/\/login\?redirect=/);
     expect(await cookie(context, COOKIE_NAMES.REFRESH_TOKEN)).toBeUndefined();
   });
+
+  test('a client-side navigation after the access cookie expired refreshes too', async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      { name: COOKIE_NAMES.ACCESS_TOKEN, value: 'old', url: baseURL! },
+      { name: COOKIE_NAMES.REFRESH_TOKEN, value: 'valid-refresh-link', url: baseURL! },
+    ]);
+    await page.goto('/');
+    await context.clearCookies({ name: COOKIE_NAMES.ACCESS_TOKEN });
+
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+
+    await expect(page).toHaveURL('/dashboard');
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    expect(await cookie(context, COOKIE_NAMES.ACCESS_TOKEN)).toMatchObject({ value: 'refreshed-access' });
+  });
+
+  test('a client-side navigation with a rejected refresh token ends on login', async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      { name: COOKIE_NAMES.ACCESS_TOKEN, value: 'old', url: baseURL! },
+      { name: COOKIE_NAMES.REFRESH_TOKEN, value: 'revoked', url: baseURL! },
+    ]);
+    await page.goto('/');
+    await context.clearCookies({ name: COOKIE_NAMES.ACCESS_TOKEN });
+
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    await expect(page.getByLabel('Email')).toBeVisible();
+    expect(await cookie(context, COOKIE_NAMES.REFRESH_TOKEN)).toBeUndefined();
+  });
 });

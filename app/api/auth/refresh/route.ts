@@ -5,6 +5,8 @@ import { decodeRedirectPath, encodeRedirectPath } from '@/utils/redirect-path';
 
 import { refreshSession } from '@/services/app/session.service';
 
+import { fullPageLoad, isClientNavigation } from '../client-navigation';
+
 /**
  * Refreshes the access token, then sends the user back to `?redirect=` (or `/`). Server Components
  * can't set cookies, so the proxy and `handleRequest` send page requests here when the access token
@@ -15,6 +17,11 @@ import { refreshSession } from '@/services/app/session.service';
  * `instrumentation.ts`) instead of redirecting back to a page that would land here again.
  */
 export async function GET(request: NextRequest) {
+  // Reached by a client-side navigation: refresh during the full page load that follows instead.
+  if (isClientNavigation(request)) {
+    return fullPageLoad();
+  }
+
   // Only same-origin paths: `decodeRedirectPath` drops anything else.
   const target = decodeRedirectPath(request.nextUrl.searchParams.get('redirect'));
 

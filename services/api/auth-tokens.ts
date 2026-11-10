@@ -16,8 +16,15 @@ export interface Session {
   expiresIn?: number;
 }
 
-const text = z.string().min(1);
-const seconds = z.number().positive();
+/** A non-empty string; anything else (missing, `null`, `''`) counts as not sent. */
+const text = z.unknown().transform(value => (typeof value === 'string' && value !== '' ? value : undefined));
+
+/** A positive number of seconds, also from a numeric string (`"3600"`); anything else counts as not sent. */
+const seconds = z.unknown().transform(value => {
+  const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+
+  return typeof number === 'number' && Number.isFinite(number) && number > 0 ? number : undefined;
+});
 
 /**
  * The token response of login and refresh, under the names APIs commonly use:
@@ -26,6 +33,7 @@ const seconds = z.number().positive();
  * - refresh token: `refresh_token`, `refreshToken`, `refresh`
  * - lifetime in seconds: `expires_in`, `expiresIn`
  *
+ * Optional fields that are `null`, empty or malformed are ignored rather than failing the login.
  * Change it if your API sends something else (e.g. nests the tokens under `data`).
  */
 export const TokenResponseSchema = z

@@ -6,6 +6,8 @@ import { getRefreshToken } from '@/services/app/session.service';
 import { COOKIE_NAMES } from '@/constants/cookie';
 import { LOGIN_ROUTE } from '@/constants/routes';
 
+import { fullPageLoad, isClientNavigation } from '../client-navigation';
+
 /**
  * True when the request was started by another site (a link, image or form on evil.example).
  * Browsers set `Sec-Fetch-Site`; `none` means the user typed the URL or used a bookmark. Requests
@@ -49,6 +51,11 @@ const endSession = (request: NextRequest, status: 303 | 307): NextResponse => {
 
 /** Used by `handleRequest` when the API rejects the token. */
 export function GET(request: NextRequest) {
+  // Reached by a client-side navigation: end the session during the full page load that follows.
+  if (isClientNavigation(request)) {
+    return fullPageLoad();
+  }
+
   return endSession(request, 307);
 }
 

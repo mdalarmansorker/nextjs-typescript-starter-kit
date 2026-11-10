@@ -40,6 +40,16 @@ describe('/api/auth/refresh', () => {
     expect(redirect).toHaveBeenCalledWith('/dashboard?tab=2');
   });
 
+  it.each([
+    ['the rsc header', new NextRequest('https://app.example.com/api/auth/refresh', { headers: { rsc: '1' } })],
+    ['the _rsc parameter', new NextRequest('https://app.example.com/api/auth/refresh?_rsc=abc')],
+  ])('answers a client-side navigation (%s) with a full page load, without refreshing', async (_name, req) => {
+    const res = await GET(req);
+
+    expect(res.status).toBe(204);
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
   it('goes home without a page to return to', async () => {
     vi.mocked(refreshSession).mockResolvedValue(true);
 

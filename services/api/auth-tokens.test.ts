@@ -23,8 +23,26 @@ describe('TokenResponseSchema', () => {
     expect(TokenResponseSchema.parse(body)).toEqual({ refreshToken: undefined, expiresIn: undefined, ...expected });
   });
 
-  it.each([{}, { token: '' }, { refresh_token: 'r' }, { token: 'a', expires_in: -1 }])('rejects %j', body => {
-    expect(() => TokenResponseSchema.parse(body)).toThrow();
+  it.each([{}, { token: '' }, { token: null }, { refresh_token: 'r' }, { token: 42 }, null, 'abc'])(
+    'rejects %j, which has no access token',
+    body => {
+      expect(() => TokenResponseSchema.parse(body)).toThrow();
+    },
+  );
+
+  it.each([
+    [{ access_token: 'a', refresh_token: null, expires_in: null }, {}],
+    [{ access_token: 'a', expires_in: '3600' }, { expiresIn: 3600 }],
+    [{ access_token: 'a', expires_in: -1 }, {}],
+    [{ access_token: 'a', expires_in: 'soon' }, {}],
+    [{ access_token: 'a', refresh_token: '' }, {}],
+  ])('ignores missing or malformed optional fields in %j', (body, expected) => {
+    expect(TokenResponseSchema.parse(body)).toEqual({
+      accessToken: 'a',
+      refreshToken: undefined,
+      expiresIn: undefined,
+      ...expected,
+    });
   });
 });
 

@@ -34,6 +34,9 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - ESLint uses `eslint-config-next` (React, accessibility and Core Web Vitals rules); `react-hooks/exhaustive-deps` is on.
 - TypeScript checks with `noUncheckedIndexedAccess` and `noFallthroughCasesInSwitch`; `typecheck` generates route types first.
 - `/api/auth/clear` accepts POST for logout forms and ignores requests started by other sites.
+- `/api/auth/refresh` and `/api/auth/clear` answer client-side navigations with a full page load, so a session that expires during a `<Link>` navigation refreshes or ends properly instead of leaving a blank page.
+- `handleRequest` ends a session in a server action by deleting the cookies itself and redirecting to `/login`; redirecting a server action to `/api/auth/clear` left the user on that URL with the cookies in place.
+- `TokenResponseSchema` ignores `null`, empty or malformed optional fields and accepts `expires_in` as a numeric string, instead of failing the login.
 - **Breaking:** `saveSession` takes `{ accessToken, refreshToken?, expiresIn? }` instead of a token string, and `AuthService.login` returns that shape. `LoginResponseSchema` is replaced by `TokenResponseSchema`.
 - Logout sends the refresh token in its body so the API can revoke it.
 - API error bodies are read by `readApiError` (`services/api/api-errors.ts`), which understands `{ message }`, `{ error }`, `{ detail }` and RFC 9457 problem details, not only `{ message, errors }`.

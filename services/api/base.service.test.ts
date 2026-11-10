@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { decodeRedirectPath } from '@/utils/redirect-path';
 
+import CookieService from '@/services/app/cookie.service';
 import { canSaveSession, getRefreshToken, refreshSession } from '@/services/app/session.service';
 
 import { ApiError } from './api-errors';
@@ -19,6 +20,7 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 vi.mock('./server-request', () => ({ executeServerRequest: vi.fn() }));
+vi.mock('@/services/app/cookie.service', () => ({ default: { clear: vi.fn() } }));
 vi.mock('@/services/app/session.service', () => ({
   canSaveSession: vi.fn(),
   getRefreshToken: vi.fn(),
@@ -33,6 +35,8 @@ beforeEach(() => {
     throw new Error('NEXT_REDIRECT');
   });
   vi.mocked(headers).mockResolvedValue(new Headers() as never);
+  // By default a Server Component render, where cookies are read-only.
+  vi.mocked(CookieService.clear).mockRejectedValue(new Error('Cookies can only be modified in a Server Action'));
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -126,6 +130,19 @@ describe('handleRequest', () => {
       expect(redirect).toHaveBeenCalledWith('/api/auth/clear');
     });
 
+    it('in a server action, deletes the cookies itself and goes to login with the current page', async () => {
+      vi.mocked(CookieService.clear).mockResolvedValue();
+      vi.mocked(headers).mockResolvedValue(new Headers({ 'x-current-path': '/projects' }) as never);
+
+      await expect(handleRequest('/me', { requiresAuth: true })).rejects.toThrow('NEXT_REDIRECT');
+
+      const target = new URL(vi.mocked(redirect).mock.calls[0]![0], 'https://app.test');
+
+      expect(CookieService.clear).toHaveBeenCalledOnce();
+      expect(target.pathname).toBe('/login');
+      expect(decodeRedirectPath(target.searchParams.get('redirect'))).toBe('/projects');
+    });
+
     it('does not end the session on a 401 from a public request', async () => {
       await expect(handleRequest('/login', { method: 'POST' })).rejects.toBeInstanceOf(ApiError);
       expect(redirect).not.toHaveBeenCalled();
@@ -161,21 +178,24 @@ describe('handleRequest', () => {
     it('ends the session when the API rejects the refresh token', async () => {
       vi.mocked(canSaveSession).mockResolvedValue(true);
       vi.mocked(refreshSession).mockResolvedValue(false);
+      vi.mocked(CookieService.clear).mockResolvedValue();
       vi.mocked(executeServerRequest).mockResolvedValue(unauthorized);
 
       await expect(handleRequest('/me', { requiresAuth: true })).rejects.toThrow('NEXT_REDIRECT');
-      expect(redirect).toHaveBeenCalledWith('/api/auth/clear');
+      expect(CookieService.clear).toHaveBeenCalledOnce();
+      expect(redirect).toHaveBeenCalledWith('/login');
       expect(executeServerRequest).toHaveBeenCalledOnce();
     });
 
     it('ends the session when the new token is refused too, without looping', async () => {
       vi.mocked(canSaveSession).mockResolvedValue(true);
       vi.mocked(refreshSession).mockResolvedValue(true);
+      vi.mocked(CookieService.clear).mockResolvedValue();
       vi.mocked(executeServerRequest).mockResolvedValue(unauthorized);
 
       await expect(handleRequest('/me', { requiresAuth: true })).rejects.toThrow('NEXT_REDIRECT');
       expect(refreshSession).toHaveBeenCalledOnce();
-      expect(redirect).toHaveBeenCalledWith('/api/auth/clear');
+      expect(redirect).toHaveBeenCalledWith('/login');
     });
 
     it('sends a Server Component render through the refresh route, back to the current page', async () => {

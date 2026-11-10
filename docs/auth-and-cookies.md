@@ -59,7 +59,7 @@ The POST first calls `AuthService.logout()`, which sends `POST AUTH_LOGOUT` (`/a
 
 ## Expired sessions
 
-When an API request with `requiresAuth` gets a 401 and there is no refresh token (or refreshing fails), `handleRequest` redirects to `GET /api/auth/clear?redirect=<current page>`, which deletes the auth cookies and redirects to `/login?redirect=…`.
+When an API request with `requiresAuth` gets a 401 and there is no refresh token (or refreshing fails), `handleRequest` ends the session. In a server action or route handler it deletes the auth cookies itself and redirects to `/login?redirect=<current page>`. While a Server Component renders, cookies are read-only, so it redirects to `GET /api/auth/clear?redirect=<current page>`, which deletes them and redirects to `/login?redirect=…`.
 
 `/api/auth/clear` ignores requests started by another site (`Sec-Fetch-Site: cross-site` or `same-site`): it redirects without deleting anything, so another site can't log your users out by embedding the URL in an image or form.
 
@@ -76,6 +76,8 @@ Next.js only lets server actions and route handlers set cookies, not Server Comp
 | The API returns 401 while a Server Component renders    | `handleRequest` redirects to `/api/auth/refresh?redirect=<page>`                                        |
 
 The first case covers most expiries before any API call is made, because the access cookie expires 30 seconds before the token. The other two catch tokens that the API rejects early (revoked, or no `expires_in` sent).
+
+**Client-side navigations.** Next.js's client router can't follow a redirect into a route handler and back to the same page: it keeps re-navigating without rendering. So `/api/auth/refresh` and `/api/auth/clear` answer a client-router request (`rsc` header or `_rsc` parameter) with an empty 204. The router then loads the URL as a full page, and the redirects run as in a normal page load.
 
 If the API rejects the refresh token (4xx), the session ends and the user goes to login, keeping the page to return to. If the API can't be reached (5xx, timeout), the error is shown instead, so an outage doesn't log everyone out. A second 401 right after a successful refresh ends the session instead of looping.
 

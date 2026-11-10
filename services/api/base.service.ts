@@ -5,9 +5,10 @@ import { redirect } from 'next/navigation';
 
 import { encodeRedirectPath } from '@/utils/redirect-path';
 
+import CookieService from '@/services/app/cookie.service';
 import { canSaveSession, getRefreshToken, refreshSession } from '@/services/app/session.service';
 
-import { CURRENT_PATH_HEADER, REFRESH_ROUTE } from '@/constants/routes';
+import { CURRENT_PATH_HEADER, LOGIN_ROUTE, REFRESH_ROUTE } from '@/constants/routes';
 
 import { ApiError, readApiError } from './api-errors';
 import { executeServerRequest, type RequestOptions } from './server-request';
@@ -42,10 +43,21 @@ const withReturnPath = async (route: string): Promise<string> => {
 };
 
 /**
- * Ends the session after the API rejected the token: deletes the auth cookies through
- * `/api/auth/clear`, which then sends the user to login with the current page to come back to.
+ * Ends the session after the API rejected the token and sends the user to login, with the current page
+ * to come back to.
+ *
+ * In server actions and route handlers the auth cookies are deleted here. While a Server Component
+ * renders cookies are read-only, so the redirect goes through `/api/auth/clear`, which deletes them.
  */
-const endSession = async (): Promise<never> => redirect(await withReturnPath('/api/auth/clear'));
+const endSession = async (): Promise<never> => {
+  try {
+    await CookieService.clear();
+  } catch {
+    redirect(await withReturnPath('/api/auth/clear'));
+  }
+
+  redirect(await withReturnPath(LOGIN_ROUTE));
+};
 
 /**
  * Handles a 401 on a `requiresAuth` request. Returns `true` when the token was refreshed and the
