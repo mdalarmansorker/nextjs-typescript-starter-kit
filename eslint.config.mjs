@@ -8,7 +8,16 @@ import prettierConfig from 'eslint-config-prettier';
 export default [
   // Ignores
   {
-    ignores: ['.next/**', 'node_modules/**', 'out/**', 'coverage/**', 'next-env.d.ts', 'eslint.config.mjs'],
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'out/**',
+      'coverage/**',
+      'test-results/**',
+      'playwright-report/**',
+      'next-env.d.ts',
+      'eslint.config.mjs',
+    ],
   },
 
   // Base rules
@@ -41,6 +50,7 @@ export default [
 
       // Next.js
       ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs['core-web-vitals'].rules,
       '@next/next/no-img-element': 'off',
       '@next/next/no-page-custom-font': 'off',
     },

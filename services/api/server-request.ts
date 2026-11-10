@@ -45,6 +45,39 @@ const revalidateCacheTags = (tags: string[]) => {
   }
 };
 
+/** A request this app refuses to send; reported to the caller as a 400. */
+class ApiRequestError extends Error {
+  status = 400;
+}
+
+/**
+ * Joins `API_URL` and a slug, and makes sure the result stays inside `API_URL`.
+ *
+ * This file is a server action, so any visitor can call it with any slug. Without this check a slug
+ * like `/../admin` would leave the API's base path, and `@evil.example` would turn `API_URL`'s host
+ * into a username and send the request (and the visitor's token) to another server.
+ */
+const buildApiUrl = (slug: string): URL => {
+  if (!API_URL) {
+    throw new Error('API_URL is not set. Add it to your environment (see .env.example).');
+  }
+
+  const base = new URL(API_URL);
+  const basePath = base.pathname.replace(/\/+$/, '');
+
+  if (!slug.startsWith('/') || slug.startsWith('//')) {
+    throw new ApiRequestError(`Invalid API path "${slug}": it must start with a single "/".`);
+  }
+
+  const url = new URL(basePath + slug, base.origin);
+
+  if (url.origin !== base.origin || !(url.pathname === basePath || url.pathname.startsWith(`${basePath}/`))) {
+    throw new ApiRequestError(`Invalid API path "${slug}": it leaves API_URL.`);
+  }
+
+  return url;
+};
+
 export const executeServerRequest = async <T = unknown>(
   slug: string,
   options: RequestOptions = {},
@@ -52,7 +85,7 @@ export const executeServerRequest = async <T = unknown>(
   const { revalidateTags, ...fetchOptions } = options;
 
   try {
-    const response = await apiInterceptor(API_URL + slug, fetchOptions);
+    const response = await apiInterceptor(buildApiUrl(slug).href, fetchOptions);
     let responseData: unknown;
 
     try {

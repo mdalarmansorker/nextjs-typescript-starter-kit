@@ -1,223 +1,84 @@
-
 # Next.js Starter Kit
 
-> A modern, full-featured starter kit for building robust web applications with Next.js, TypeScript, Redux Toolkit, Tailwind CSS, and more.
+A starter for Next.js apps that talk to a separate backend API: TypeScript, Redux Toolkit, Tailwind CSS, a server-side API layer, tests and CI, ready to build on.
 
 ## Features
 
-- **Next.js 16** with App Router and TypeScript
-- **Redux Toolkit** for state management
-- **Tailwind CSS** for utility-first styling
-- **Prettier, ESLint, Stylelint** for code quality and formatting
-- **CryptoJS** for encryption utilities
-- **Lucide React** for icons
-- **Environment variable support** (with `.env.example`)
-- Modular folder structure for scalability
+- **Next.js 16** App Router with React 19 and TypeScript in strict mode
+- **API layer** that runs every backend call on the server, attaches the access token and handles expired sessions
+- **Auth cookie handling** and a session-clearing route, ready for your login page
+- **AES-256-GCM encryption** with purpose labels, expiry and key rotation
+- **Redux Toolkit** with typed hooks and a per-request store
+- **Tailwind CSS 4**
+- **Vitest + React Testing Library** for unit and component tests, **Playwright** for end-to-end tests
+- **ESLint, Prettier, Stylelint** and **GitHub Actions** CI with Dependabot
+- **Security headers**, error page and 404 page
+- **Generators** for new feature modules and types
 
-## Project Structure
+## Getting started
 
-```
-├── app/                # Next.js app directory (pages, layout, etc.)
-├── constants/          # API endpoints and constants
-├── lib/                # Store, hooks, utilities, and features
-├── public/             # Static assets
-├── services/           # API layer (services/api) and app-level services (cache, cookies)
-├── types/              # TypeScript type definitions
-├── utils/              # Utility functions (e.g., encryption)
-├── styles/             # Global and component styles
-├── .env.example        # Example environment variables
-├── package.json        # Project dependencies and scripts
-├── tsconfig.json       # TypeScript configuration
-└── ...
+Requires Node.js 22.18 or newer (`.nvmrc` pins 26).
+
+```bash
+npm install
+cp .env.example .env.local   # then set API_URL and the other values
+npm run dev
 ```
 
-## Getting Started
-
-1. **Install dependencies:**
-
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-2. **Copy and configure environment variables:**
-
-   ```bash
-   cp .env.example .env.local
-   # Edit .env.local as needed
-   ```
-
-3. **Run the development server:**
-
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-4. **Open your browser:**
-   Visit [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-- `dev` – Start the development server
-- `build` – Build for production
-- `start` – Start the production server
-- `lint` – Run ESLint
-- `lint:fix` – Fix ESLint issues
-- `typecheck` – Run the TypeScript compiler without emitting files
-- `format` – Format code with Prettier
-- `stylelint` – Run Stylelint
-- `stylelint:fix` – Fix Stylelint issues
-- `make:module <name>` – Scaffold a full module (page, view, service, types, constants)
-- `make:type <name>` – Scaffold a type definition file only
+| Script                                | Does                                                            |
+| ------------------------------------- | --------------------------------------------------------------- |
+| `npm run dev`                         | Start the development server                                    |
+| `npm run build`                       | Build for production                                            |
+| `npm start`                           | Serve the production build                                      |
+| `npm test`                            | Unit and component tests in watch mode                          |
+| `npm run test:run`                    | Unit and component tests once                                   |
+| `npm run test:coverage`               | Unit and component tests with coverage (fails below thresholds) |
+| `npm run test:e2e`                    | Playwright end-to-end tests against the production build        |
+| `npm run lint` / `lint:fix`           | Check / fix with ESLint                                         |
+| `npm run format` / `format:check`     | Format / check with Prettier                                    |
+| `npm run stylelint` / `stylelint:fix` | Check / fix styles                                              |
+| `npm run typecheck`                   | Type-check without building                                     |
+| `npm run make:module <name>`          | Create a page, view, API service, type and endpoint constant    |
+| `npm run make:type <name>`            | Create a type                                                   |
 
-### Code Generators
+## Project structure
 
-#### `make:module`
-
-Generates all the boilerplate files for a new feature module in one command.
-
-```bash
-npm run make:module <moduleName>
+```
+├── app/          # Routes, layouts, error and 404 pages, route handlers
+├── views/        # Page UIs (created by make:module)
+├── services/     # API layer (services/api) and app services: cookies, cache
+├── lib/          # Redux store, hooks, slices, cn()
+├── utils/        # Helpers; *.server.ts are server-only
+├── constants/    # Endpoint paths, cookie names
+├── types/        # Shared types, exported from types/index.ts
+├── scripts/      # Code generators
+├── e2e/          # Playwright tests
+└── docs/         # Documentation
 ```
 
-**Example:**
+Unit tests sit next to the code they test (`helpers.ts` → `helpers.test.ts`).
 
-```bash
-npm run make:module blogPost
-```
+## Documentation
 
-**Files created:**
+| Guide                                                  | Covers                                                      |
+| ------------------------------------------------------ | ----------------------------------------------------------- |
+| [Project structure](docs/project-structure.md)         | Folders, naming, imports, server vs client code             |
+| [Environment variables](docs/environment-variables.md) | Every variable, public vs server-only, load order           |
+| [API layer](docs/api-layer.md)                         | Calling the backend, options, errors, caching               |
+| [Auth cookies and sessions](docs/auth-and-cookies.md)  | Storing tokens, CookieService, logout, post-login redirects |
+| [Encryption](docs/encryption.md)                       | Encrypting data, contexts, expiry, key rotation             |
+| [State management](docs/state-management.md)           | When to use Redux, adding slices                            |
+| [Code generators](docs/code-generators.md)             | `make:module` and `make:type`                               |
+| [Testing](docs/testing.md)                             | Unit, component and e2e tests, patterns, coverage           |
+| [Code quality and CI](docs/code-quality-and-ci.md)     | Linting, formatting, CI checks, Dependabot                  |
+| [Security](docs/security.md)                           | What's built in, what to decide, go-live checklist          |
 
-| File                                 | Description                       |
-| ------------------------------------ | --------------------------------- |
-| `app/blog-posts/page.tsx`            | Next.js page route                |
-| `views/blog-posts/BlogPosts.tsx`     | View/UI component                 |
-| `services/api/blog_posts.service.ts` | API service class with CRUD stubs |
-| `types/blog_posts.d.ts`              | TypeScript interface              |
-| `constants/api/blog_posts_api.ts`    | API endpoint constants            |
-
-Exports are automatically appended to `types/index.d.ts` and `constants/api/index.ts`.
-
-The module name is accepted in any format — `camelCase`, `PascalCase`, `snake_case`, or `kebab-case` — and normalized automatically.
-
-#### `make:type`
-
-Generates a single TypeScript interface file and registers it in the type index.
-
-```bash
-npm run make:type <typeName>
-```
-
-**Example:**
-
-```bash
-npm run make:type category
-```
-
-**Files created:**
-
-| File                    | Description                                 |
-| ----------------------- | ------------------------------------------- |
-| `types/categories.d.ts` | TypeScript interface with `id: string` stub |
-
-The export is automatically appended to `types/index.d.ts`. Will not overwrite an existing type file.
-
-## Key Technologies
-
-- **Next.js**: React framework for server-side rendering and static site generation
-- **TypeScript**: Strongly typed JavaScript
-- **Redux Toolkit**: Simplified Redux state management
-- **Tailwind CSS**: Utility-first CSS framework
-- **CryptoJS**: Encryption and decryption utilities
-- **Lucide React**: Icon library
-
-## State Management Example
-
-Redux Toolkit is set up in `lib/store.ts` and `lib/features/`. Use `useAppDispatch` and `useAppSelector` from `lib/hooks.ts` for typed hooks.
-
-## Utilities
-
-- `lib/utils.ts`: Utility helpers (e.g., `cn` for class merging)
-- `utils/encryption.server.ts`: Server-only AES-256-GCM encryption/decryption
-- `utils/redirect-encryption.ts`: Hides redirect URLs in query strings (obfuscation, not security)
-
-## API Layer
-
-All backend calls go through `handleRequest` in `services/api`, which attaches the access token, parses the response and handles expired sessions. Requests run on the server, so `API_URL` and the token cookie stay out of the browser.
-
-```ts
-import { handleRequest } from '@/services/api/base.service';
-
-const me = await handleRequest<User>('/auth/me', { requiresAuth: true, cache: 'no-store' });
-```
-
-See [docs/api-layer.md](docs/api-layer.md) for the request flow, options, error handling and setup.
-
-## Cookie Service
-
-`services/app/cookie.service.ts` provides a unified, isomorphic cookie API that works on both client and server (Next.js App Router).
-
-### Methods
-
-| Method                                        | Description                   |
-| --------------------------------------------- | ----------------------------- |
-| `CookieService.store(name, value, options?)`  | Set a cookie                  |
-| `CookieService.get(name)`                     | Get a cookie value            |
-| `CookieService.update(name, value, options?)` | Overwrite an existing cookie  |
-| `CookieService.delete(name, options?)`        | Remove a cookie               |
-| `CookieService.clear()`                       | Remove all accessible cookies |
-
-All methods are `async` and work on both server and client. Synchronous variants (`storeSync`, `getSync`, `deleteSync`, `clearSync`) are also available for **client-side only** use.
-
-### Usage
-
-**Client component / client-side code:**
-
-```ts
-import CookieService from '@/services/app/cookie.service'
-
-// Set
-await CookieService.store('token', 'abc123', { expires: 7 })
-
-// Get
-const token = await CookieService.get('token')
-
-// Update
-await CookieService.update('token', 'newValue')
-
-// Delete
-await CookieService.delete('token')
-
-// Clear all
-await CookieService.clear()
-```
-
-**Synchronous client-side shortcuts:**
-
-```ts
-CookieService.storeSync('theme', 'dark')
-const theme = CookieService.getSync('theme')
-CookieService.deleteSync('theme')
-CookieService.clearSync()
-```
-
-> Sync methods throw an error if called on the server. Use the async methods in Server Components and Server Actions.
-
-## Environment Variables
-
-See `.env.example` for all available environment variables. Only variables prefixed with `NEXT_PUBLIC_` are exposed to the client.
-
-## Linting & Formatting
-
-- ESLint, Prettier, and Stylelint are preconfigured. Use the provided scripts to check and fix code style.
+When you change how something works, update its guide in the same pull request.
 
 ## Deployment
 
-Deploy easily to [Vercel](https://vercel.com/) or your preferred platform. See Next.js docs for more info.
-
----
-
-**Happy coding!**
+Any host that runs Next.js works: Vercel, a Node server (`npm run build && npm start`) or a container. Set the [environment variables](docs/environment-variables.md) on the host and go through the [security checklist](docs/security.md#checklist-before-going-live) first.

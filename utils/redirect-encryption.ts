@@ -19,6 +19,15 @@ const fromUrlSafeBase64 = (value: string): string => {
 };
 
 /**
+ * True for a path on this site (`/dashboard?tab=1`), false for anything that leaves it:
+ * absolute URLs, protocol-relative `//host` and `/\host` (browsers read both as another host),
+ * and values with control characters.
+ */
+export const isSafeRedirectPath = (value: string): boolean => {
+  return /^\/(?![/\\])/.test(value) && !/\p{Cc}/u.test(value);
+};
+
+/**
  * Encrypts a redirect URL using a non-secret key.
  *
  * This is only intended to hide the URL from being immediately readable.
@@ -44,10 +53,12 @@ export const encryptRedirectUrl = (url: string): string | null => {
 /**
  * Decrypts a redirect URL encrypted by encryptRedirectUrl.
  *
- * This is only intended for reversing URL obfuscation.
+ * This is only intended for reversing URL obfuscation. The key is public, so anyone can produce a
+ * value that decrypts. Only paths on this site are returned, so a crafted value can't redirect a
+ * user to another site after login.
  *
  * @param encryptedUrl - URL-safe encrypted redirect value.
- * @returns Original redirect URL, or null when decryption fails.
+ * @returns The original path, or null when decryption fails or the result is not a path on this site.
  */
 export const decryptRedirectUrl = (encryptedUrl: string): string | null => {
   if (!encryptedUrl) {
@@ -59,7 +70,7 @@ export const decryptRedirectUrl = (encryptedUrl: string): string | null => {
 
     const decrypted = CryptoJS.AES.decrypt(restored, REDIRECT_ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8);
 
-    return decrypted || null;
+    return decrypted && isSafeRedirectPath(decrypted) ? decrypted : null;
   } catch {
     return null;
   }

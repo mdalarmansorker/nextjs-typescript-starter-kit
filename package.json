@@ -9,17 +9,21 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
+    "format": "prettier --write .",
     "stylelint": "stylelint \"**/*.{css,scss,js,jsx,ts,tsx}\"",
     "stylelint:fix": "stylelint \"**/*.{css,scss,js,jsx,ts,tsx}\" --fix",
-    "make:module": "ts-node --project scripts/tsconfig.json scripts/make-module.ts",
-    "make:type": "ts-node --project scripts/tsconfig.json scripts/make-type.ts"
+    "make:module": "node scripts/make-module.mts",
+    "make:type": "node scripts/make-type.mts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.14.0",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
-    "fs-extra": "^11.3.4",
     "js-cookie": "^3.0.8",
     "lucide-react": "^1.70.0",
     "next": "^16.4.5",
@@ -31,30 +35,40 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@next/eslint-plugin-next": "^16.4.5",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4.3.5",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.9",
     "@types/crypto-js": "^4.2.2",
-    "@types/fs-extra": "^11.0.4",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^26.6.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^14.0.0",
+    "jsdom": "^31.0.0",
     "postcss-styled-syntax": "^0.7.4",
     "prettier": "^3.9.10",
     "stylelint": "^17.16.0",
     "stylelint-plugin-logical-css": "^2.1.0",
     "tailwindcss": "^4.3.5",
-    "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1"
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
   },
   "overrides": {
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "postcss": "^8.5.32",
     "minimatch": "^11.0.5"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }

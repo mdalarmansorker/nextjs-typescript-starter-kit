@@ -26,35 +26,9 @@ Domain service (e.g. services/api/blog_posts.service.ts)
 
 ## Setup
 
-Set these in `.env` (see `.env.example`):
+Set `API_URL` in `.env.local`, e.g. `http://localhost:8000/api` (see [environment-variables.md](environment-variables.md)). Without it every request fails with "API_URL is not set".
 
-| Variable                   | Required           | Purpose                                                                 |
-| -------------------------- | ------------------ | ----------------------------------------------------------------------- |
-| `API_URL`                  | Yes                | Backend base URL, e.g. `http://localhost:8000/api`. Server-only         |
-| `ENCRYPTION_KEY`           | If encryption used | 32-byte Base64 or 64-character hex key for `utils/encryption.server.ts` |
-| `ENCRYPTION_KEY_PREVIOUS`  | No                 | Old key during a rotation, so existing values still decrypt             |
-| `TRUSTED_CLIENT_IP_HEADER` | No                 | Header your proxy sets with the visitor's IP, e.g. `cf-connecting-ip`   |
-
-Only set `TRUSTED_CLIENT_IP_HEADER` when a proxy overwrites that header. Otherwise a browser could fake its address.
-
-**Add a `/login` page.** The starter doesn't ship one, but an expired session in the browser redirects there.
-
-**Store the token after login.** The interceptor reads the access token from the `COOKIE_NAMES.ACCESS_TOKEN` cookie. Login and token refresh depend on your backend's response format, so the starter leaves them to you:
-
-```ts
-import CookieService from '@/services/app/cookie.service';
-
-import { AUTH_COOKIES_DURATION_DAYS, COOKIE_NAMES, COOKIE_SECURE } from '@/constants/cookie';
-
-// In a server action or route handler
-await CookieService.store(COOKIE_NAMES.ACCESS_TOKEN, token, {
-  expires: AUTH_COOKIES_DURATION_DAYS,
-  httpOnly: true,
-  secure: COOKIE_SECURE,
-  sameSite: 'lax',
-  path: '/',
-});
-```
+For logins and expired sessions you also need a `/login` page and code that stores the token after login. See [auth-and-cookies.md](auth-and-cookies.md).
 
 ## Writing a service
 
@@ -96,7 +70,9 @@ export default class UserService {
 | `revalidateTags` | none    | Clears these Next.js cache tags after a successful response. Server actions only |
 | `cachedRead`     | `false` | Set on reads inside `use cache: private`, where `connection()` isn't allowed     |
 
-`slug` is appended to `API_URL`. `Content-Type: application/json` is set automatically, except for `FormData` bodies.
+`slug` is appended to `API_URL` and must start with `/`. A slug that would leave `API_URL` (`/../admin`, `@other-host`) is refused with a 400 result, because any visitor can call the server action with any slug (see [security.md](security.md#api-requests-stay-inside-api_url)).
+
+`Content-Type: application/json` is set automatically, except for `FormData` bodies.
 
 ## Error handling
 
@@ -121,7 +97,7 @@ try {
 
 On a 401 for a `requiresAuth` request, the user goes to `/api/auth/clear`, which deletes every cookie in `COOKIE_NAMES`.
 
-- **From the browser:** they then land on `/login?redirect=<current page>`. The redirect value is obfuscated with `utils/redirect-encryption.ts`, which isn't a security measure.
+- **From the browser:** they then land on `/login?redirect=<current page>`. The redirect value is obfuscated with `utils/redirect-encryption.ts`; see [auth-and-cookies.md](auth-and-cookies.md#returning-the-user-after-login) for reading it back safely.
 - **From the server:** they land on `/`.
 
 Redirects are thrown by Next.js, so rethrow them if you wrap server code in `try/catch`. `unstable_rethrow` from `next/navigation` does this.
@@ -130,15 +106,12 @@ Redirects are thrown by Next.js, so rethrow them if you wrap server code in `try
 
 Each uncached request calls `connection()`, which makes the page render at request time. To cache a read, use `use cache` or `use cache: private` and pass `cachedRead: true`, then clear it from a write with `revalidateTags`. Both directives need `cacheComponents: true` in `next.config.ts`.
 
-## Encryption
+## Testing
 
-`utils/encryption.server.ts` is AES-256-GCM and can only be imported from server code, so the key can't reach the browser.
+Each layer is tested with the layer below it mocked: `base.service.test.ts` mocks `executeServerRequest`, `server-request.test.ts` mocks `apiInterceptor`, and `api.interceptor.test.ts` mocks `fetch`. To test a domain service, mock `handleRequest`:
 
 ```ts
-import { decryptData, encryptData } from '@/utils/encryption.server';
-
-const token = encryptData({ userId: '42' }, 'password-reset', { ttlSeconds: 900 });
-const data = decryptData<{ userId: string }>(token, 'password-reset'); // null if tampered with or expired
+vi.mock('@/services/api/base.service', () => ({ handleRequest: vi.fn() }));
 ```
 
-The second argument is a context label: a value encrypted with one label won't decrypt with another.
+See [testing.md](testing.md).

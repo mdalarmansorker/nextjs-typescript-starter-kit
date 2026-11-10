@@ -2,14 +2,19 @@ name: PR checks
 
 on:
   pull_request:
+  push:
+    branches: [master]
 
 # A new push to a pull request replaces the run still going for its previous commit.
 concurrency:
-  group: pr-checks-${{ github.event.pull_request.number }}
+  group: pr-checks-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
 
 jobs:
   check:
@@ -23,21 +28,51 @@ jobs:
         include:
           - name: Lint
             command: npm run lint
+          - name: Format
+            command: npm run format:check
+          - name: Stylelint
+            command: npm run stylelint
           - name: Typecheck
             command: npm run typecheck
-          - name: Build
-            command: npm run build
-    env:
-      NEXT_TELEMETRY_DISABLED: 1
+          - name: Unit tests
+            command: npm run test:coverage
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 26
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
 
       - run: ${{ matrix.command }}
 
+  e2e:
+    # Builds the app, so this also catches a failing production build.
+    name: Build & E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run build
+
+      - run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
