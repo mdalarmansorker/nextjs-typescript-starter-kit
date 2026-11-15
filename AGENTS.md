@@ -24,18 +24,19 @@ Before saying a change is done, run lint, format check, typecheck and `test:run`
 
 ## Where code goes
 
-| Path               | Holds                                                                     |
-| ------------------ | ------------------------------------------------------------------------- |
-| `app/`             | Routes only. `page.tsx` stays thin and renders a view                     |
-| `views/<feature>/` | The UI of a page                                                          |
-| `services/api/`    | Server-only API layer: `handleRequest` and one service class per resource |
-| `services/app/`    | Cookies (`CookieService`) and the login session                           |
-| `constants/`       | Endpoint paths (`constants/api/`), cookie names, protected routes         |
-| `lib/`             | Redux store, typed hooks, slices, `cn()`                                  |
-| `utils/`           | Framework-free helpers; `*.server.ts` files are server-only               |
-| `types/`           | Shared types, re-exported from `types/index.ts`                           |
-| `proxy.ts`         | Route protection (Next.js 16 replaced `middleware.ts` with `proxy.ts`)    |
-| `docs/`            | One guide per area. Read the relevant one before changing that area       |
+| Path             | Holds                                                                     |
+| ---------------- | ------------------------------------------------------------------------- |
+| `app/`           | Routes only. `page.tsx` stays thin and renders a view                     |
+| `views/<route>/` | The UI of a page: `index.tsx`, `sections/`, view-only `components/`       |
+| `components/`    | UI shared by several views, grouped by area (`layout/`, `ui/`, `form/`)   |
+| `services/api/`  | Server-only API layer: `handleRequest` and one service class per resource |
+| `services/app/`  | Cookies (`CookieService`) and the login session                           |
+| `constants/`     | Endpoint paths (`constants/api/`), cookie names, protected routes         |
+| `lib/`           | Redux store, typed hooks, slices, `cn()`                                  |
+| `utils/`         | Framework-free helpers; `*.server.ts` files are server-only               |
+| `types/`         | Shared types, re-exported from `types/index.ts`                           |
+| `proxy.ts`       | Route protection (Next.js 16 replaced `middleware.ts` with `proxy.ts`)    |
+| `docs/`          | One guide per area. Read the relevant one before changing that area       |
 
 Scaffold a new feature with `npm run make:module <name>` (page, view, service, type, endpoint constant) instead of creating the files by hand.
 
@@ -63,12 +64,20 @@ Scaffold a new feature with `npm run make:module <name>` (page, view, service, t
 - Redirect targets from URLs or forms must pass `isSafeRedirectPath` (`utils/redirect-path.ts`).
 - Never expose `API_URL`, tokens or `ENCRYPTION_KEY` to the browser. Only `NEXT_PUBLIC_*` variables reach client code.
 
+### Components and views
+
+- One component per file. A function that renders JSX gets its own file, even a small helper; don't define a second component next to the main one. Exception: a primitive family in the style of shadcn/ui (an `input.tsx` exporting `Input` and its parts, a `dialog.tsx` with `Dialog`, `DialogTrigger`, `DialogContent`) may share one file, because its parts are meant to be composed together.
+- Views mirror the routes: `app/blog/page.tsx` renders `views/blog/index.tsx`. Page sections go in `views/<route>/sections/<Name>Section.tsx`; pieces only that view uses go in `views/<route>/components/`. A nested route nests its view: `app/blog/[slug]/page.tsx` renders `views/blog/detail/index.tsx`.
+- A component used by more than one view goes in the root `components/` folder, grouped by area (`components/layout/`, `components/ui/`, `components/form/`). Move it there when a second view needs it; never import one view's internals from another view.
+- Split a long component when it does several distinct things (a header, a list, a sidebar), not by line count alone. Don't duplicate a component with small differences; share one with a prop.
+- Refactors that move or split components keep the rendered markup and behaviour identical.
+
 ### Code style
 
 - TypeScript strict with `noUncheckedIndexedAccess`: index access returns `T | undefined`, so handle it.
 - Imports use the `@/` alias. Import order is enforced by ESLint (`simple-import-sort`); run `npm run lint:fix` rather than ordering by hand.
 - Single quotes, formatted by Prettier. Don't hand-format.
-- Components and views are PascalCase files; other files are kebab-case or camelCase as in neighboring code.
+- Components are PascalCase files; a view is `index.tsx` in its route folder; other files are kebab-case or camelCase as in neighboring code.
 - Follow the patterns in nearby files before adding new abstractions or dependencies.
 
 ### Tests

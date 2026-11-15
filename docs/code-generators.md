@@ -13,7 +13,7 @@ The name can be in any case: `blogPost`, `BlogPost`, `blog_post` and `blog-post`
 | File created                         | Contents                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | `app/blog-posts/page.tsx`            | Route that renders the view                                                                            |
-| `views/blog-posts/BlogPosts.tsx`     | View component with a heading                                                                          |
+| `views/blog-posts/index.tsx`         | View component with a heading                                                                          |
 | `services/api/blog_posts.service.ts` | Server-only `BlogPostService` with `index`, `show`, `store`, `update`, `destroy` using `handleRequest` |
 | `types/blog_posts.ts`                | `BlogPost` interface with `id`                                                                         |
 | `constants/api/blog_posts.api.ts`    | `BLOG_POSTS = '/blog-posts'`                                                                           |
