@@ -4,28 +4,29 @@ Where code goes and the conventions that keep it consistent.
 
 ## Folders
 
-| Folder          | Holds                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------ |
-| `app/`          | Routes: pages, layouts, `error.tsx`, `not-found.tsx` and route handlers (`app/api/**`)     |
-| `views/`        | The UI of a page. `app/<route>/page.tsx` stays thin and renders a view                     |
-| `components/`   | Reusable UI shared by several views (create it when you need it)                           |
-| `services/api/` | The API layer and one service class per backend resource. See [api-layer.md](api-layer.md) |
-| `services/app/` | App-level services that aren't API calls: cookies and the login session                    |
-| `lib/`          | Redux store, typed hooks, slices (`lib/features/`) and `cn()`                              |
-| `utils/`        | Framework-free helpers. Files ending in `.server.ts` can only be imported on the server    |
-| `constants/`    | Endpoint paths (`constants/api/`), cookie names, protected routes and other fixed values   |
-| `types/`        | Shared TypeScript types, all exported from `types/index.ts`                                |
-| `scripts/`      | The `make:module` and `make:type` generators. See [code-generators.md](code-generators.md) |
-| `e2e/`          | Playwright end-to-end tests                                                                |
-| `docs/`         | This documentation                                                                         |
-| `public/`       | Static files served from `/`                                                               |
+| Folder          | Holds                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `app/`          | Routes: pages, layouts, `error.tsx`, `not-found.tsx` and route handlers (`app/api/**`)                                                                       |
+| `views/`        | The UI of a page, by route: `views/<route>/index.tsx`, its page sections in `sections/`, view-only parts in `components/`. `app/<route>/page.tsx` stays thin |
+| `components/`   | UI used by more than one view, grouped by area (`layout/`, `ui/`, `form/`)                                                                                   |
+| `services/api/` | The API layer and one service class per backend resource. See [api-layer.md](api-layer.md)                                                                   |
+| `services/app/` | App-level services that aren't API calls: cookies and the login session                                                                                      |
+| `lib/`          | Redux store, typed hooks, slices (`lib/features/`) and `cn()`                                                                                                |
+| `utils/`        | Framework-free helpers. Files ending in `.server.ts` can only be imported on the server                                                                      |
+| `constants/`    | Endpoint paths (`constants/api/`), cookie names, protected routes and other fixed values                                                                     |
+| `types/`        | Shared TypeScript types, all exported from `types/index.ts`                                                                                                  |
+| `scripts/`      | The `make:module` and `make:type` generators. See [code-generators.md](code-generators.md)                                                                   |
+| `e2e/`          | Playwright end-to-end tests                                                                                                                                  |
+| `docs/`         | This documentation                                                                                                                                           |
+| `public/`       | Static files served from `/`                                                                                                                                 |
 
 ## Naming
 
 | What                  | Pattern                                     | Example                              |
 | --------------------- | ------------------------------------------- | ------------------------------------ |
 | Route folder          | kebab-case, plural                          | `app/blog-posts/page.tsx`            |
-| View / component      | PascalCase                                  | `views/blog-posts/BlogPosts.tsx`     |
+| View                  | `index.tsx` in the route's folder           | `views/blog-posts/index.tsx`         |
+| Component             | PascalCase, one component per file          | `components/ui/Button.tsx`           |
 | API service           | `<snake_plural>.service.ts`                 | `services/api/blog_posts.service.ts` |
 | Endpoint constants    | `<snake_plural>.api.ts`                     | `constants/api/blog_posts.api.ts`    |
 | Types                 | `<snake_plural>.ts`                         | `types/blog_posts.ts`                |
@@ -38,6 +39,12 @@ Where code goes and the conventions that keep it consistent.
 Types live in `.ts` files, not `.d.ts`. The project uses `skipLibCheck`, which skips checking every `.d.ts` file, including your own, so a mistake in a `.d.ts` type would never be reported.
 
 A type that mirrors an API response can be a zod schema with `z.infer` instead, so the same definition also checks the response at runtime (see `services/api/auth.service.ts`).
+
+## Components and views
+
+One component per file: a function that renders JSX gets its own file. A primitive family in the style of shadcn/ui (an `input.tsx` with `Input` and its parts) may share a file.
+
+Views follow the routes. `app/blog/page.tsx` renders `views/blog/index.tsx`; the page's sections go in `views/blog/sections/` and pieces only that view uses in `views/blog/components/`. A nested route nests its view: `app/blog/[slug]/page.tsx` renders `views/blog/detail/index.tsx`. When a second view needs a component, move it to the root `components/` folder.
 
 ## Imports
 

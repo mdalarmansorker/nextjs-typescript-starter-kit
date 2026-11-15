@@ -17,7 +17,7 @@ const { pascal, pascalPlural, snakePlural, kebabPlural, constantPlural } = norma
 
 const paths = {
   page: `app/${kebabPlural}/page.tsx`,
-  view: `views/${kebabPlural}/${pascalPlural}.tsx`,
+  view: `views/${kebabPlural}/index.tsx`,
   service: `services/api/${snakePlural}.service.ts`,
   type: `types/${snakePlural}.ts`,
   constant: `constants/api/${snakePlural}.api.ts`,
@@ -31,7 +31,7 @@ assertFilesDoNotExist(Object.values(paths));
 
 writeFile(
   paths.page,
-  `import ${pascalPlural} from '@/views/${kebabPlural}/${pascalPlural}';
+  `import ${pascalPlural} from '@/views/${kebabPlural}';
 
 export default function ${pascalPlural}Page() {
   return <${pascalPlural} />;

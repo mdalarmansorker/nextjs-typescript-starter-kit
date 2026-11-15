@@ -30,6 +30,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 
 ### Changed
 
+- Convention: one component per file, and views organised by route (`views/<route>/index.tsx` with `sections/` and view-only `components/`; shared UI in `components/`). `npm run make:module` now creates `views/<name>/index.tsx`. See `AGENTS.md` and `docs/project-structure.md`.
 - **Breaking:** the API layer is server-only. `executeServerRequest` is no longer a server action; client components call your own server actions, which call the services.
 - **Breaking:** `handleRequest` always throws `ApiError` (with `status`, `message`, `errors`). The third `mode` argument is removed: catch `ApiError` instead of using `'raw'`.
 - **Breaking:** `utils/redirect-encryption.ts` is replaced by `utils/redirect-path.ts` (`encodeRedirectPath`, `decodeRedirectPath`), without `crypto-js`.
