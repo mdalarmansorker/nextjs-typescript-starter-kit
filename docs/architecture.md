@@ -112,13 +112,6 @@ Client components get API data as props from a Server Component, or change it th
 
 ## Decisions
 
-| Decision                                      | Why                                                                                    |
-| --------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Only the server calls the API                 | Secrets and tokens never reach the browser; one place for auth, timeouts and errors    |
-| Tokens in `httpOnly` cookies                  | Injected scripts can't steal them                                                      |
-| Reads in Server Components, writes in actions | Server actions run one at a time and can't be cached, so they suit writes, not reads   |
-| zod checks on API responses                   | A changed API fails at the call with a clear error, not somewhere unrelated in the UI  |
-| The proxy only checks that a cookie exists    | It runs on every request and can't call the API; the API stays the authority on access |
-| One `readApiError` for all error bodies       | Supporting another backend means changing one function                                 |
+Why the kit is built this way, and how to propose a change to it, is recorded in [decisions.md](decisions.md). Read it before changing the API layer, auth, routing, state or the project structure.
 
 Security measures and a go-live checklist: [security.md](security.md).

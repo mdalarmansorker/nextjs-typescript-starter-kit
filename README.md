@@ -81,6 +81,7 @@ Unit tests sit next to the code they test (`helpers.ts` → `helpers.test.ts`).
 | Guide                                                  | Covers                                                       |
 | ------------------------------------------------------ | ------------------------------------------------------------ |
 | [Architecture](docs/architecture.md)                   | How the parts fit together: request flow, sessions, errors   |
+| [Decisions](docs/decisions.md)                         | Why it's built this way, and how to propose a change         |
 | [Project structure](docs/project-structure.md)         | Folders, naming, imports, server vs client code              |
 | [Environment variables](docs/environment-variables.md) | Every variable, public vs server-only, load order            |
 | [API layer](docs/api-layer.md)                         | Calling the backend, options, errors, caching                |

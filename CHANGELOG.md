@@ -10,6 +10,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - `parsePage` (`services/api/pagination.ts`): reads paginated lists from Laravel, Django REST Framework and other common shapes into one `Page<T>`. `components/Pagination.tsx` renders previous / next links.
 - `responseType: 'text' | 'blob'` on `handleRequest` for text and file downloads. A caller's `Accept` header is no longer overwritten.
 - `docs/architecture.md`: how the parts fit together, with diagrams of reads, writes and sessions, where errors end up, and the main design decisions.
+- `docs/decisions.md`: a log of the design decisions behind the kit (D-001 to D-010) and how to add or supersede one. `AGENTS.md` tells AI agents to read it before changing an area and not to work around an accepted decision.
 - The 404 page (`app/not-found.tsx`) renders `views/not-found/`, with "Go home" and a "Go back" button that falls back to home when there is no history.
 
 - Login page and server action, `httpOnly` session cookie, and route protection in `proxy.ts` (`constants/routes.ts`). An example protected page at `/dashboard`.

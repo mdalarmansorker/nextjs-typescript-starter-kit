@@ -88,6 +88,15 @@ Scaffold a new feature with `npm run make:module <name>` (page, view, service, t
 - E2E tests use the mock API in `e2e/mock-api.mjs`; add endpoints there when a flow needs them.
 - Don't lower the coverage thresholds in `vitest.config.mts` to make a run pass.
 
+### Decisions
+
+`docs/decisions.md` records why the kit is built the way it is.
+
+- Before changing the API layer, auth, routing, state, tests or project structure, read the decisions for that area.
+- Don't work around an accepted decision. If a task needs to go against one, stop and ask the user. If they agree, add a new decision that supersedes the old one, in the same change.
+- When a change sets a new direction (a new dependency, pattern or convention), add a decision using the template in that file. Routine features and fixes don't need one.
+- Never rewrite an accepted decision; supersede it.
+
 ### Documentation
 
 Every change that affects behavior, setup or conventions updates the matching guide in `docs/` in the same change, and adds a line to `CHANGELOG.md` under "Unreleased".
