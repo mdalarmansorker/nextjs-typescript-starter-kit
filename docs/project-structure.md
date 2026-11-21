@@ -75,7 +75,7 @@ Components are Server Components unless the file starts with `'use client'`. Kee
 | `app/dashboard/page.tsx`        | Example page behind login. Replace it                                                     |
 | `app/error.tsx`                 | Shown when a page throws: a reference ID and "Try again"                                  |
 | `app/global-error.tsx`          | Shown when the root layout itself throws; replaces the whole page                         |
-| `app/not-found.tsx`             | 404 page for unknown URLs and `notFound()`                                                |
+| `app/not-found.tsx`             | 404 page for unknown URLs and `notFound()`; renders `views/not-found/`                    |
 | `app/api/auth/clear/route.ts`   | Ends a session (logout and expired tokens)                                                |
 | `app/api/auth/refresh/route.ts` | Refreshes the access token, then returns to the page                                      |
 | `app/robots.ts`                 | `/robots.txt`: keeps crawlers out of `/api/` and protected pages                          |
