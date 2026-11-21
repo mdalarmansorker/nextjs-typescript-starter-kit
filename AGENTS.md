@@ -36,7 +36,7 @@ Before saying a change is done, run lint, format check, typecheck and `test:run`
 | `utils/`         | Framework-free helpers; `*.server.ts` files are server-only               |
 | `types/`         | Shared types, re-exported from `types/index.ts`                           |
 | `proxy.ts`       | Route protection (Next.js 16 replaced `middleware.ts` with `proxy.ts`)    |
-| `docs/`          | One guide per area. Read the relevant one before changing that area       |
+| `docs/`          | One guide per area, `architecture.md` first. Read one before changing it  |
 
 Scaffold a new feature with `npm run make:module <name>` (page, view, service, type, endpoint constant) instead of creating the files by hand.
 
