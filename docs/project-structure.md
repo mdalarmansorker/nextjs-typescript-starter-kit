@@ -65,6 +65,18 @@ Components are Server Components unless the file starts with `'use client'`. Kee
 - Add `import 'server-only'` to modules that must never be bundled for the browser. The build fails if a client component imports one.
 - Calls to the backend go through `services/api`, which is server-only. Server Components read through it; client components call a server action that uses it. See [api-layer.md](api-layer.md#where-requests-run).
 
+## Logging
+
+Production builds (`next build`) remove every `console.*` call from app code, on the server and in the browser, including `console.error` and `console.warn` (`compiler.removeConsole` in `next.config.ts`). `next dev` and tests keep them all. Code in `node_modules` is not changed.
+
+This means a production server logs nothing of its own:
+
+- **Server errors** are not written to the logs. Connect an error tracker (Sentry or similar) in `onRequestError` in `instrumentation.ts`; its SDK lives in `node_modules`, so it keeps working.
+- **The startup warning** for a missing `API_URL` is not shown. A malformed variable still stops the server, because that is a thrown error, not a log.
+- **`console.*` is for local debugging only.** Don't rely on it to record anything in production.
+
+To keep error logs, change the option to `{ exclude: ['error', 'warn'] }`.
+
 ## App files
 
 | File                            | Purpose                                                                                   |
@@ -75,7 +87,7 @@ Components are Server Components unless the file starts with `'use client'`. Kee
 | `app/dashboard/page.tsx`        | Example page behind login. Replace it                                                     |
 | `app/error.tsx`                 | Shown when a page throws: a reference ID and "Try again"                                  |
 | `app/global-error.tsx`          | Shown when the root layout itself throws; replaces the whole page                         |
-| `app/not-found.tsx`             | 404 page for unknown URLs and `notFound()`                                                |
+| `app/not-found.tsx`             | 404 page for unknown URLs and `notFound()`; renders `views/not-found/`                    |
 | `app/api/auth/clear/route.ts`   | Ends a session (logout and expired tokens)                                                |
 | `app/api/auth/refresh/route.ts` | Refreshes the access token, then returns to the page                                      |
 | `app/robots.ts`                 | `/robots.txt`: keeps crawlers out of `/api/` and protected pages                          |
@@ -89,7 +101,7 @@ Components are Server Components unless the file starts with `'use client'`. Kee
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `proxy.ts`                                  | Runs before every page: protects routes, passes the current path to server code                                                                                            |
 | `instrumentation.ts`                        | Checks environment variables at startup and receives every server error; connect your error tracker here                                                                   |
-| `next.config.ts`                            | Security headers. See [security.md](security.md)                                                                                                                           |
+| `next.config.ts`                            | Security headers (see [security.md](security.md)); removes `console.*` from production builds (see [Logging](#logging))                                                    |
 | `vitest.config.mts`, `playwright.config.ts` | Test setup. See [testing.md](testing.md)                                                                                                                                   |
 | `.nvmrc`                                    | Node version                                                                                                                                                               |
 | `AGENTS.md`, `CLAUDE.md`                    | Instructions for AI coding agents. `CLAUDE.md` imports `AGENTS.md`; keep the rules in `AGENTS.md`. `next dev` maintains the block between the `nextjs-agent-rules` markers |

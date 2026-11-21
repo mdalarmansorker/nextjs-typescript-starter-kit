@@ -13,7 +13,7 @@ npm run dev
 
 1. Branch from `master`.
 2. Make the change with tests. See [docs/testing.md](docs/testing.md).
-3. Update the guide in [docs/](docs/) for anything whose behavior or setup changed, and add a line to [CHANGELOG.md](CHANGELOG.md) under "Unreleased".
+3. Update the guide in [docs/](docs/) for anything whose behavior or setup changed, and add a line to [CHANGELOG.md](CHANGELOG.md) under "Unreleased". If the change goes against a decision in [docs/decisions.md](docs/decisions.md), or sets a new direction, add a decision there.
 4. Open a pull request. The template lists what reviewers look for, and CI runs every check (see [docs/code-quality-and-ci.md](docs/code-quality-and-ci.md)).
 
 ## Pre-commit hook

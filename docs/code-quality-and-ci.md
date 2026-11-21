@@ -54,7 +54,7 @@ To skip it once, e.g. for a work-in-progress commit: `git commit --no-verify`.
 
 ## Node version
 
-`.nvmrc` sets Node 26, which CI uses too. `package.json` requires at least Node 22.18 (`engines`), the first version that runs the TypeScript generator scripts without a build step. With nvm:
+`.nvmrc` sets Node 26, which CI uses too. `package.json` (`engines`) requires Node 22.22.2+, 24.15+ or 26+, the versions Stylelint 18 supports. Node 23 and 25 are not supported. With nvm:
 
 ```bash
 nvm use
@@ -86,3 +86,5 @@ Every check reports on its own, even when another fails. Make them required for 
 - **GitHub Actions**, monthly
 
 CI runs on each one, so a passing update can usually be merged as is. Read the changelog before merging a major update.
+
+Major updates of `typescript` are ignored for now: `typescript-eslint` supports TypeScript below 6.1 only. Remove the `ignore` entry in `.github/dependabot.yml` once a `typescript-eslint` release supports TypeScript 7 (check its `peerDependencies`).

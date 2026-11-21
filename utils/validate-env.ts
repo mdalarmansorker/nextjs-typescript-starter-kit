@@ -28,7 +28,8 @@ const encryptionKey = (name: string) =>
  */
 const EnvSchema = z
   .object({
-    API_URL: z.string({ error: 'API_URL is not set' }).pipe(httpUrl('API_URL')),
+    // Optional so the UI can be built and deployed before the API exists; see `envWarnings`.
+    API_URL: optional(httpUrl('API_URL')),
     NEXT_PUBLIC_APP_URL: optional(httpUrl('NEXT_PUBLIC_APP_URL')),
     ENCRYPTION_KEY: optional(encryptionKey('ENCRYPTION_KEY')),
     ENCRYPTION_KEY_PREVIOUS: optional(encryptionKey('ENCRYPTION_KEY_PREVIOUS')),
@@ -48,9 +49,20 @@ export const validateEnv = (env: Record<string, string | undefined>): string[] =
   return result.success ? [] : result.error.issues.map(issue => issue.message);
 };
 
+const isUnset = (value: string | undefined) => value === undefined || value.trim() === '';
+
 /**
- * Throws one error listing every invalid variable. Called from `register()` in `instrumentation.ts`,
- * so the server refuses to start with a broken configuration.
+ * Variables that are allowed to be missing but limit what the app can do. Returns one message per
+ * variable; empty when nothing is missing.
+ */
+export const envWarnings = (env: Record<string, string | undefined>): string[] =>
+  isUnset(env.API_URL)
+    ? ['API_URL is not set: pages and actions that call the API will fail until you add it (see .env.example).']
+    : [];
+
+/**
+ * Throws one error listing every invalid variable, then logs a warning for each missing optional one. Called from `register()` in `instrumentation.ts`,
+ * so the server refuses to start with a broken configuration but starts without the API configured.
  */
 export const assertValidEnv = (env: Record<string, string | undefined>): void => {
   const problems = validateEnv(env);
@@ -60,5 +72,9 @@ export const assertValidEnv = (env: Record<string, string | undefined>): void =>
       `Invalid environment variables (see .env.example and docs/environment-variables.md):\n` +
         problems.map(problem => `  - ${problem}`).join('\n'),
     );
+  }
+
+  for (const warning of envWarnings(env)) {
+    console.warn(`Warning: ${warning}`);
   }
 };

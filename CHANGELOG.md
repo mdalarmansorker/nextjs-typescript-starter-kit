@@ -9,6 +9,10 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - Example CRUD module at `/projects` (list with pagination, create and edit forms with zod and API validation errors, delete, 404), with unit and e2e tests and mock API endpoints. See `docs/example-module.md`.
 - `parsePage` (`services/api/pagination.ts`): reads paginated lists from Laravel, Django REST Framework and other common shapes into one `Page<T>`. `components/Pagination.tsx` renders previous / next links.
 - `responseType: 'text' | 'blob'` on `handleRequest` for text and file downloads. A caller's `Accept` header is no longer overwritten.
+- `docs/architecture.md`: how the parts fit together, with diagrams of reads, writes and sessions, where errors end up, and the main design decisions.
+- `docs/decisions.md`: a log of the design decisions behind the kit (D-001 to D-010) and how to add or supersede one. `AGENTS.md` tells AI agents to read it before changing an area and not to work around an accepted decision.
+- Production builds remove every `console.*` call from app code, including `console.error` (`compiler.removeConsole` in `next.config.ts`). Connect an error tracker in `instrumentation.ts` to see server errors in production. See `docs/project-structure.md#logging`.
+- The 404 page (`app/not-found.tsx`) renders `views/not-found/`, with "Go home" and a "Go back" button that falls back to home when there is no history.
 
 - Login page and server action, `httpOnly` session cookie, and route protection in `proxy.ts` (`constants/routes.ts`). An example protected page at `/dashboard`.
 - After an expired session, users return to the page they were on once they log in again.
@@ -20,7 +24,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - Security headers, error and 404 pages.
 - `AGENTS.md` with project rules for AI coding agents, plus Next.js's managed docs block; `CLAUDE.md` imports it.
 - `LICENSE` (MIT), `CONTRIBUTING.md`, pull request template, and guides for every area in `docs/`.
-- Environment variables are checked when the server starts (`utils/validate-env.ts`, called from `register()` in `instrumentation.ts`); a missing `API_URL` or malformed key stops the server with a list of problems.
+- Environment variables are checked when the server starts (`utils/validate-env.ts`, called from `register()` in `instrumentation.ts`); a malformed `API_URL` or key stops the server with a list of problems. A missing `API_URL` only logs a warning, so the UI can be built and deployed before the API exists.
 - Logout revokes the token on the API (`AuthService.logout`, `AUTH_LOGOUT`) before deleting the cookies. Set `AUTH_LOGOUT` to `null` if your API has no logout endpoint.
 - Token refresh for APIs that issue refresh tokens: the proxy refreshes an expired access token before the page renders (`/api/auth/refresh`), and `handleRequest` refreshes and retries once on a 401. Parallel refreshes with the same refresh token share one API call, so rotating refresh tokens work. `AUTH_REFRESH = null` turns it off.
 - Login and refresh responses are read by `TokenResponseSchema` (`services/api/auth-tokens.ts`), which accepts `token`, `access_token`, `accessToken` or `access`, plus an optional refresh token and `expires_in`. The access cookie expires with the token.
@@ -30,6 +34,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 
 ### Changed
 
+- Dependencies updated to their latest versions, including Next.js 16.4.6, Stylelint 18 and `@testing-library/jest-dom` 8. TypeScript stays on 6.0 until `typescript-eslint` supports TypeScript 7; Dependabot skips its major updates until then.
 - Convention: one component per file, and views organised by route (`views/<route>/index.tsx` with `sections/` and view-only `components/`; shared UI in `components/`). `npm run make:module` now creates `views/<name>/index.tsx`. See `AGENTS.md` and `docs/project-structure.md`.
 - **Breaking:** the API layer is server-only. `executeServerRequest` is no longer a server action; client components call your own server actions, which call the services.
 - **Breaking:** `handleRequest` always throws `ApiError` (with `status`, `message`, `errors`). The third `mode` argument is removed: catch `ApiError` instead of using `'raw'`.
@@ -49,7 +54,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - API error bodies are read by `readApiError` (`services/api/api-errors.ts`), which understands `{ message }`, `{ error }`, `{ detail }` and RFC 9457 problem details, not only `{ message, errors }`.
 - Code generators run on Node's built-in TypeScript support, refuse to overwrite files, and generate server-only services.
 - Prettier formats every file type; GitHub Actions are pinned to commit SHAs.
-- Requires Node.js 22.18 or newer.
+- Requires Node.js 22.22.2+, 24.15+ or 26+ (the versions Stylelint 18 supports).
 
 ### Fixed
 

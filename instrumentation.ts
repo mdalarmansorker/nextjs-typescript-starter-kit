@@ -2,8 +2,8 @@ import type { Instrumentation } from 'next';
 
 /**
  * Called once when the server starts, before it handles requests. Checks the environment variables
- * (`utils/validate-env.ts`), so a missing `API_URL` or a malformed key stops the server with a list of
- * what's wrong. Skipped during `next build`, which runs without the runtime secrets.
+ * (`utils/validate-env.ts`), so a malformed `API_URL` or key stops the server with a list of what's
+ * wrong. A missing `API_URL` only logs a warning, so the UI can run before the API exists. Skipped during `next build`, which runs without the runtime secrets.
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs' || process.env.NEXT_PHASE === 'phase-production-build') {

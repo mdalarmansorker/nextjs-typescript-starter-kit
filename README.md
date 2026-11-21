@@ -1,7 +1,7 @@
 # Next.js Starter Kit
 
 [![PR checks](https://github.com/mdalarmansorker/nextjs-typescript-starter-kit/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/mdalarmansorker/nextjs-typescript-starter-kit/actions/workflows/pr-checks.yml)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D22.18-brightgreen)](.nvmrc)
+[![Node.js](https://img.shields.io/badge/node-22.22%20%7C%2024.15%20%7C%2026-brightgreen)](.nvmrc)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 A starter for Next.js apps that talk to a separate REST API, whatever it's built with: Laravel, Django, FastAPI, Express, Rails, Go or anything else that speaks JSON over HTTP. TypeScript, Redux Toolkit, Tailwind CSS, a server-side API layer, tests and CI, ready to build on.
@@ -12,7 +12,7 @@ A starter for Next.js apps that talk to a separate REST API, whatever it's built
 - **Server-only API layer** with timeouts, query parameters, runtime response checks (zod), pagination, uploads and downloads, typed errors and expired-session handling
 - **Works with any REST backend**: error bodies and field errors are read from the common formats (Laravel, Django REST Framework, FastAPI, Express, RFC 9457, JSON:API) in one adaptable function
 - **Login, logout and protected routes**: login page and server action, `httpOnly` token cookies, token refresh (with rotating refresh tokens), token revocation on logout, `proxy.ts` route protection, return-to-page after login
-- **Environment check at startup**: a missing `API_URL` or malformed key stops the server with a clear list of problems
+- **Environment check at startup**: a malformed `API_URL` or key stops the server with a clear list of problems; a missing `API_URL` only warns, so you can build the UI first
 - **AES-256-GCM encryption** with purpose labels, expiry and key rotation
 - **Redux Toolkit** with typed hooks and a per-request store
 - **Tailwind CSS 4**
@@ -25,7 +25,7 @@ A starter for Next.js apps that talk to a separate REST API, whatever it's built
 
 ## Getting started
 
-Requires Node.js 22.18 or newer (`.nvmrc` pins 26).
+Requires Node.js 22.22.2+, 24.15+ or 26+ (`.nvmrc` pins 26).
 
 ```bash
 npm install                  # also installs the pre-commit hook
@@ -33,7 +33,7 @@ cp .env.example .env.local   # then set API_URL and the other values
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Logging in needs your backend at `API_URL`. To connect your API:
+Open [http://localhost:3000](http://localhost:3000). Pages that don't call the API work without `API_URL`, so you can build and deploy the UI first; logging in and the example module need your backend at `API_URL`. To connect your API:
 
 1. Set the endpoint paths in `constants/api/auth.api.ts` (`AUTH_LOGOUT = null` if your API has no logout endpoint).
 2. Check that your login response fits `TokenResponseSchema` in `services/api/auth-tokens.ts` (it accepts `token`, `access_token`, `access`, refresh tokens and `expires_in`). Set `AUTH_REFRESH = null` if your API has no refresh endpoint.
@@ -80,6 +80,8 @@ Unit tests sit next to the code they test (`helpers.ts` → `helpers.test.ts`).
 
 | Guide                                                  | Covers                                                       |
 | ------------------------------------------------------ | ------------------------------------------------------------ |
+| [Architecture](docs/architecture.md)                   | How the parts fit together: request flow, sessions, errors   |
+| [Decisions](docs/decisions.md)                         | Why it's built this way, and how to propose a change         |
 | [Project structure](docs/project-structure.md)         | Folders, naming, imports, server vs client code              |
 | [Environment variables](docs/environment-variables.md) | Every variable, public vs server-only, load order            |
 | [API layer](docs/api-layer.md)                         | Calling the backend, options, errors, caching                |

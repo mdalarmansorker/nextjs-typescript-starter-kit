@@ -22,6 +22,9 @@ test('unknown pages show the not-found page with a 404', async ({ page }) => {
   expect(response?.status()).toBe(404);
   await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
   await expect(page).toHaveTitle(/^Page not found \| /);
+
+  await page.getByRole('link', { name: 'Go home' }).click();
+  await expect(page).toHaveURL('/');
 });
 
 test('responses carry the security headers', async ({ request }) => {
