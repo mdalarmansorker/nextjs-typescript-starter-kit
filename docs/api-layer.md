@@ -65,7 +65,7 @@ Server Component / server action / route handler
 
 ## Setup
 
-Set `API_URL` in `.env.local`, e.g. `http://localhost:8000/api` (see [environment-variables.md](environment-variables.md)). Without it every request fails with "API_URL is not set".
+Set `API_URL` in `.env.local`, e.g. `http://localhost:8000/api` (see [environment-variables.md](environment-variables.md)). Without it the server still starts (with a warning), and every request fails with "API_URL is not set", so you can build the UI before the API exists.
 
 Login, sessions and route protection are described in [auth-and-cookies.md](auth-and-cookies.md).
 

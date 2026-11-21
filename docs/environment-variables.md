@@ -8,14 +8,14 @@ cp .env.example .env.local
 
 ## Variables
 
-| Variable                   | Where it's read  | Required           | Purpose                                                                                         |
-| -------------------------- | ---------------- | ------------------ | ----------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_APP_NAME`     | Server + browser | No                 | App name in the page title (`Settings \| <name>`). Defaults to "Next.js Starter Kit"            |
-| `NEXT_PUBLIC_APP_URL`      | Server + browser | In production      | Public URL of the app. Used as `metadataBase` for absolute Open Graph and canonical URLs        |
-| `API_URL`                  | Server only      | Yes                | Backend base URL, e.g. `http://localhost:8000/api`. Requests fail with a clear error without it |
-| `ENCRYPTION_KEY`           | Server only      | If encryption used | 32-byte key for `utils/encryption.server.ts`. See [encryption.md](encryption.md)                |
-| `ENCRYPTION_KEY_PREVIOUS`  | Server only      | No                 | The old key during a key rotation                                                               |
-| `TRUSTED_CLIENT_IP_HEADER` | Server only      | No                 | Header your proxy sets with the visitor's IP. See [security.md](security.md)                    |
+| Variable                   | Where it's read  | Required           | Purpose                                                                                                                                |
+| -------------------------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_APP_NAME`     | Server + browser | No                 | App name in the page title (`Settings \| <name>`). Defaults to "Next.js Starter Kit"                                                   |
+| `NEXT_PUBLIC_APP_URL`      | Server + browser | In production      | Public URL of the app. Used as `metadataBase` for absolute Open Graph and canonical URLs                                               |
+| `API_URL`                  | Server only      | To call the API    | Backend base URL, e.g. `http://localhost:8000/api`. Without it the app starts with a warning, and API requests fail with a clear error |
+| `ENCRYPTION_KEY`           | Server only      | If encryption used | 32-byte key for `utils/encryption.server.ts`. See [encryption.md](encryption.md)                                                       |
+| `ENCRYPTION_KEY_PREVIOUS`  | Server only      | No                 | The old key during a key rotation                                                                                                      |
+| `TRUSTED_CLIENT_IP_HEADER` | Server only      | No                 | Header your proxy sets with the visitor's IP. See [security.md](security.md)                                                           |
 
 ## Startup check
 
@@ -28,6 +28,14 @@ Invalid environment variables (see .env.example and docs/environment-variables.m
 ```
 
 `next build` skips the check, so builds don't need the runtime secrets. Blank optional variables count as unset.
+
+**Without `API_URL`** the server still starts, so you can build and deploy the UI before the API exists. It logs a warning instead:
+
+```
+Warning: API_URL is not set: pages and actions that call the API will fail until you add it (see .env.example).
+```
+
+Pages that call the API then show `app/error.tsx`, and the login form shows its generic error, until you set `API_URL` and restart. A malformed `API_URL` (such as `localhost:8000` without `http://`) still stops the server. Warnings for missing optional variables come from `envWarnings` in `utils/validate-env.ts`.
 
 ## Rules
 
@@ -44,5 +52,5 @@ Next.js loads, from highest to lowest priority: the real environment, `.env.$(NO
 
 1. Add it to `.env.example` with a comment and a safe example value.
 2. Add it to the table above.
-3. Add it to `EnvSchema` in `utils/validate-env.ts` (wrapped in `optional(...)` if the app works without it), so a wrong value stops the server at startup.
+3. Add it to `EnvSchema` in `utils/validate-env.ts` (wrapped in `optional(...)` if the app works without it), so a wrong value stops the server at startup. If the app starts without it but loses a feature, add a warning to `envWarnings`.
 4. Add it to your hosting provider and to CI if the build needs it.

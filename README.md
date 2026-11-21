@@ -12,7 +12,7 @@ A starter for Next.js apps that talk to a separate REST API, whatever it's built
 - **Server-only API layer** with timeouts, query parameters, runtime response checks (zod), pagination, uploads and downloads, typed errors and expired-session handling
 - **Works with any REST backend**: error bodies and field errors are read from the common formats (Laravel, Django REST Framework, FastAPI, Express, RFC 9457, JSON:API) in one adaptable function
 - **Login, logout and protected routes**: login page and server action, `httpOnly` token cookies, token refresh (with rotating refresh tokens), token revocation on logout, `proxy.ts` route protection, return-to-page after login
-- **Environment check at startup**: a missing `API_URL` or malformed key stops the server with a clear list of problems
+- **Environment check at startup**: a malformed `API_URL` or key stops the server with a clear list of problems; a missing `API_URL` only warns, so you can build the UI first
 - **AES-256-GCM encryption** with purpose labels, expiry and key rotation
 - **Redux Toolkit** with typed hooks and a per-request store
 - **Tailwind CSS 4**
@@ -33,7 +33,7 @@ cp .env.example .env.local   # then set API_URL and the other values
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Logging in needs your backend at `API_URL`. To connect your API:
+Open [http://localhost:3000](http://localhost:3000). Pages that don't call the API work without `API_URL`, so you can build and deploy the UI first; logging in and the example module need your backend at `API_URL`. To connect your API:
 
 1. Set the endpoint paths in `constants/api/auth.api.ts` (`AUTH_LOGOUT = null` if your API has no logout endpoint).
 2. Check that your login response fits `TokenResponseSchema` in `services/api/auth-tokens.ts` (it accepts `token`, `access_token`, `access`, refresh tokens and `expires_in`). Set `AUTH_REFRESH = null` if your API has no refresh endpoint.

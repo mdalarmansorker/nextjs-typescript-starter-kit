@@ -141,3 +141,15 @@ Entries marked **Baseline** describe choices made before this log was started (v
 **Decision.** Vitest runs unit and component tests, mocking the layer below the code under test. Playwright runs e2e tests against the production build and `e2e/mock-api.mjs`. Coverage thresholds in `vitest.config.mts` are not lowered to make a run pass.
 
 **Consequences.** Tests are fast and need no backend. When a flow needs an endpoint, it is added to the mock API, which must stay close to the real API's shapes.
+
+## D-011: The app starts without an API
+
+- **Status:** Accepted
+- **Date:** 2026-11-21
+- **Area:** Tooling
+
+**Context.** The startup check (`utils/validate-env.ts`) used to stop the server when `API_URL` was not set. Teams often design, build and deploy the UI before the backend exists, and a server that won't start blocks that work.
+
+**Decision.** `API_URL` is optional at startup. When it is unset or blank, `assertValidEnv` logs a warning (from `envWarnings`) and the server starts. A malformed `API_URL` still stops the server. Requests made without it fail with "API_URL is not set", so pages that call the API show `app/error.tsx`.
+
+**Consequences.** Pages that don't call the API work and can be deployed without a backend. A deployment that forgets `API_URL` is noticed by the warning in the logs and the first failing API page, not by a server that refuses to start. Other variables that the app can run without but lose a feature should follow the same pattern: optional in `EnvSchema`, a message in `envWarnings`.

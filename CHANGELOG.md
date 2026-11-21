@@ -23,7 +23,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - Security headers, error and 404 pages.
 - `AGENTS.md` with project rules for AI coding agents, plus Next.js's managed docs block; `CLAUDE.md` imports it.
 - `LICENSE` (MIT), `CONTRIBUTING.md`, pull request template, and guides for every area in `docs/`.
-- Environment variables are checked when the server starts (`utils/validate-env.ts`, called from `register()` in `instrumentation.ts`); a missing `API_URL` or malformed key stops the server with a list of problems.
+- Environment variables are checked when the server starts (`utils/validate-env.ts`, called from `register()` in `instrumentation.ts`); a malformed `API_URL` or key stops the server with a list of problems. A missing `API_URL` only logs a warning, so the UI can be built and deployed before the API exists.
 - Logout revokes the token on the API (`AuthService.logout`, `AUTH_LOGOUT`) before deleting the cookies. Set `AUTH_LOGOUT` to `null` if your API has no logout endpoint.
 - Token refresh for APIs that issue refresh tokens: the proxy refreshes an expired access token before the page renders (`/api/auth/refresh`), and `handleRequest` refreshes and retries once on a 401. Parallel refreshes with the same refresh token share one API call, so rotating refresh tokens work. `AUTH_REFRESH = null` turns it off.
 - Login and refresh responses are read by `TokenResponseSchema` (`services/api/auth-tokens.ts`), which accepts `token`, `access_token`, `accessToken` or `access`, plus an optional refresh token and `expires_in`. The access cookie expires with the token.
