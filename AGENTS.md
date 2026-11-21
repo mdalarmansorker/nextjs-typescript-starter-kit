@@ -79,6 +79,7 @@ Scaffold a new feature with `npm run make:module <name>` (page, view, service, t
 - Single quotes, formatted by Prettier. Don't hand-format.
 - Components are PascalCase files; a view is `index.tsx` in its route folder; other files are kebab-case or camelCase as in neighboring code.
 - Follow the patterns in nearby files before adding new abstractions or dependencies.
+- Production builds strip every `console.*` call, including `console.error`. Use `console` for local debugging only; report production errors through `onRequestError` in `instrumentation.ts`.
 
 ### Tests
 

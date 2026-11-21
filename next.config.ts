@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
   // Don't advertise the framework in an `X-Powered-By` header.
   poweredByHeader: false,
 
+  compiler: {
+    // Production builds drop every `console.*` call from app code, on the server and in the browser,
+    // including `console.error`. Server errors are then not logged unless `onRequestError` in
+    // `instrumentation.ts` sends them to an error tracker. `next dev` and tests keep all output.
+    // To keep some output in production, list it: `{ exclude: ['error', 'warn'] }`.
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

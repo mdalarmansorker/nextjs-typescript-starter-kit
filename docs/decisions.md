@@ -153,3 +153,15 @@ Entries marked **Baseline** describe choices made before this log was started (v
 **Decision.** `API_URL` is optional at startup. When it is unset or blank, `assertValidEnv` logs a warning (from `envWarnings`) and the server starts. A malformed `API_URL` still stops the server. Requests made without it fail with "API_URL is not set", so pages that call the API show `app/error.tsx`.
 
 **Consequences.** Pages that don't call the API work and can be deployed without a backend. A deployment that forgets `API_URL` is noticed by the warning in the logs and the first failing API page, not by a server that refuses to start. Other variables that the app can run without but lose a feature should follow the same pattern: optional in `EnvSchema`, a message in `envWarnings`.
+
+## D-012: Production builds remove all console output
+
+- **Status:** Accepted
+- **Date:** 2026-11-21
+- **Area:** Tooling
+
+**Context.** Output left in code clutters the browser console and server logs in production and can expose data such as API responses or tokens.
+
+**Decision.** `next.config.ts` sets `compiler.removeConsole` to `true` when `NODE_ENV` is `production`. Every `console.*` call in app code, including `console.error` and `console.warn`, is removed from production builds, on the server and in the browser. Development and tests keep all of them.
+
+**Consequences.** Nothing from app code reaches the console in production. Server errors, including the log line in `onRequestError` (`instrumentation.ts`), are not logged until an error tracker is connected there; its SDK is in `node_modules`, which is not stripped. The startup warning for a missing `API_URL` (D-011) is not shown in production. `{ exclude: ['error', 'warn'] }` was considered, which keeps the server's error logs; switching to it needs a new decision that supersedes this one.
