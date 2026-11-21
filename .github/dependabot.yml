@@ -9,6 +9,10 @@ updates:
       # One pull request for all minor and patch updates; majors still come one by one.
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # typescript-eslint supports TypeScript below 6.1 only. Remove this once it supports TypeScript 7.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /

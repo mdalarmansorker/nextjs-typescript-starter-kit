@@ -1,7 +1,7 @@
 # Next.js Starter Kit
 
 [![PR checks](https://github.com/mdalarmansorker/nextjs-typescript-starter-kit/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/mdalarmansorker/nextjs-typescript-starter-kit/actions/workflows/pr-checks.yml)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D22.18-brightgreen)](.nvmrc)
+[![Node.js](https://img.shields.io/badge/node-22.22%20%7C%2024.15%20%7C%2026-brightgreen)](.nvmrc)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 A starter for Next.js apps that talk to a separate REST API, whatever it's built with: Laravel, Django, FastAPI, Express, Rails, Go or anything else that speaks JSON over HTTP. TypeScript, Redux Toolkit, Tailwind CSS, a server-side API layer, tests and CI, ready to build on.
@@ -25,7 +25,7 @@ A starter for Next.js apps that talk to a separate REST API, whatever it's built
 
 ## Getting started
 
-Requires Node.js 22.18 or newer (`.nvmrc` pins 26).
+Requires Node.js 22.22.2+, 24.15+ or 26+ (`.nvmrc` pins 26).
 
 ```bash
 npm install                  # also installs the pre-commit hook

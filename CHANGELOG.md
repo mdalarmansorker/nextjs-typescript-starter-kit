@@ -33,6 +33,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 
 ### Changed
 
+- Dependencies updated to their latest versions, including Next.js 16.4.6, Stylelint 18 and `@testing-library/jest-dom` 8. TypeScript stays on 6.0 until `typescript-eslint` supports TypeScript 7; Dependabot skips its major updates until then.
 - Convention: one component per file, and views organised by route (`views/<route>/index.tsx` with `sections/` and view-only `components/`; shared UI in `components/`). `npm run make:module` now creates `views/<name>/index.tsx`. See `AGENTS.md` and `docs/project-structure.md`.
 - **Breaking:** the API layer is server-only. `executeServerRequest` is no longer a server action; client components call your own server actions, which call the services.
 - **Breaking:** `handleRequest` always throws `ApiError` (with `status`, `message`, `errors`). The third `mode` argument is removed: catch `ApiError` instead of using `'raw'`.
@@ -52,7 +53,7 @@ Notable changes to the starter kit. The format follows [Keep a Changelog](https:
 - API error bodies are read by `readApiError` (`services/api/api-errors.ts`), which understands `{ message }`, `{ error }`, `{ detail }` and RFC 9457 problem details, not only `{ message, errors }`.
 - Code generators run on Node's built-in TypeScript support, refuse to overwrite files, and generate server-only services.
 - Prettier formats every file type; GitHub Actions are pinned to commit SHAs.
-- Requires Node.js 22.18 or newer.
+- Requires Node.js 22.22.2+, 24.15+ or 26+ (the versions Stylelint 18 supports).
 
 ### Fixed
 
